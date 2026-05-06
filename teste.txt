@@ -1,0 +1,43 @@
+TESTES DO SISTEMA SORVPEL - CONTROLE DE ESTOQUE
+Data: 2026-05-06
+================================================
+
+INFRAESTRUTURA (Docker)
+-----------------------
+[OK] postgres:16-alpine - Up (healthy) - porta interna 5432
+[OK] backend (FastAPI/uvicorn) - Up - porta interna 8000
+[OK] nginx (proxy reverso) - Up - porta publica 8080
+
+BANCO DE DADOS
+--------------
+[OK] Migrations Alembic executadas (001_initial_schema)
+[OK] 6 tabelas criadas: alembic_version, firmware_versions, inventory_movements, operators, products, web_users
+[OK] Seed: 1 admin, 5 produtos, 2 operadores inseridos
+
+ENDPOINTS WEB (HTTP via Nginx :8080)
+--------------------------------------
+[OK] GET  /health             -> {"status":"ok"}
+[OK] POST /login              -> 302 redirect + cookie access_token
+[OK] GET  /dashboard          -> HTTP 200 (template renderizado)
+[OK] GET  /movements          -> HTTP 200
+[OK] GET  /admin/operators    -> HTTP 200
+[OK] GET  /api/docs           -> HTTP 200 (Swagger UI)
+
+ENDPOINTS REST (autenticados via cookie)
+-----------------------------------------
+[OK] GET /api/v1/products     -> 5 produtos retornados
+[OK] GET /api/v1/operators    -> 2 operadores retornados
+[OK] GET /api/v1/movements    -> {"total":1, ...}
+
+ENDPOINT ESP32 (autenticado via X-API-Key)
+-------------------------------------------
+[OK] POST /api/v1/movements   -> HTTP 201 {"id":1,"message":"Movimento registrado"}
+
+BUGS CORRIGIDOS DURANTE OS TESTES
+-----------------------------------
+1. Senha no .env continha '@' quebrando a DATABASE_URL -> removido o caracter especial
+2. asyncpg tentava conexao SSL sem necessidade -> adicionado ?ssl=disable na DATABASE_URL
+3. bcrypt 4.x incompativel com passlib 1.7.4 -> fixado bcrypt==3.2.2 no requirements.txt
+4. Template base.html definia bloco 'content' duas vezes -> reestruturado para um unico bloco
+
+RESULTADO GERAL: SISTEMA OPERACIONAL

@@ -27,7 +27,9 @@ ESP32 Terminal (LCD + Teclado)
 bash scripts/setup.sh
 ```
 
-Acesse: `http://localhost` — Login: `admin` / `admin123`
+Acesse: `http://localhost:8080` — Login: `admin` / `admin123`
+
+> **Nota:** Em Windows, a porta 80 costuma estar bloqueada. O `.env` já usa `NGINX_PORT=8080` por padrão.
 
 > **IMPORTANTE:** Altere a senha do admin no primeiro acesso!
 
@@ -62,7 +64,7 @@ A `ESP32_API_KEY` está no arquivo `.env` gerado durante o setup.
 
 ## API para Integração
 
-Documentação Swagger: `http://localhost/api/docs`
+Documentação Swagger: `http://localhost:8080/api/docs`
 
 Endpoint principal para ESP32:
 ```

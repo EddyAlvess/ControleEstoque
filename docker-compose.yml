@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-sorv_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-controle_estoque}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-sorv_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-controle_estoque}?ssl=disable
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
