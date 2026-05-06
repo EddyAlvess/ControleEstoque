@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import require_admin, require_user, verify_esp32_key
+from app.dependencies import require_admin, require_user, require_user_or_esp32, verify_esp32_key
 from app.models.operator import Operator
 from app.models.user import WebUser
 from app.schemas.operator import OperatorCreate, OperatorRead, OperatorUpdate
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/v1/operators", tags=["operators"])
 @router.get("", response_model=list[OperatorRead])
 async def list_operators(
     db: AsyncSession = Depends(get_db),
-    _user: WebUser | None = Depends(require_user),
+    _: None = Depends(require_user_or_esp32),
 ):
     result = await db.execute(
         select(Operator).where(Operator.is_active == True).order_by(Operator.name)

@@ -57,3 +57,26 @@ async def verify_esp32_key(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="API key inválida",
         )
+
+
+async def require_user_or_esp32(
+    request: Request,
+    api_key: str | None = Security(api_key_header),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Aceita autenticação via JWT (web) ou X-API-Key (ESP32)."""
+    if api_key and api_key == settings.ESP32_API_KEY:
+        return None
+    token = request.cookies.get("access_token")
+    if token:
+        token_data = decode_access_token(token)
+        if token_data:
+            result = await db.execute(
+                select(WebUser).where(WebUser.id == token_data.user_id, WebUser.is_active == True)
+            )
+            if result.scalar_one_or_none():
+                return None
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Não autenticado",
+    )

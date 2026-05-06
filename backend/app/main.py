@@ -40,4 +40,6 @@ async def unauthorized_handler(request: Request, exc):
     if request.url.path.startswith("/api/"):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=401, content={"detail": "Não autenticado"})
-    return RedirectResponse(url="/login")
+    resp = RedirectResponse(url="/login", status_code=302)
+    resp.delete_cookie("access_token")
+    return resp

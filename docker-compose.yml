@@ -51,6 +51,24 @@ services:
     networks:
       - frontend_net
 
+  esp32-sim:
+    build:
+      context: ./esp32-sim
+      dockerfile: Dockerfile
+    environment:
+      SERVER_URL: http://nginx
+      API_KEY: ${ESP32_API_KEY}
+      DEVICE_ID: ${SIM_DEVICE_ID:-SIM-TERMINAL-01}
+      MENU_IDLE_MS: ${MENU_IDLE_MS:-60000}
+    depends_on:
+      - nginx
+    networks:
+      - frontend_net
+    stdin_open: true
+    tty: true
+    profiles:
+      - sim
+
 volumes:
   postgres_data:
   firmware_uploads:

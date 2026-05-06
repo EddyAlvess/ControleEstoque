@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import require_admin, require_user
+from app.services.auth_service import decode_access_token
 from app.models.movement import InventoryMovement
 from app.models.operator import Operator
 from app.models.product import Product
@@ -29,9 +30,12 @@ async def root():
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    if request.cookies.get("access_token"):
+    token = request.cookies.get("access_token")
+    if token and decode_access_token(token):
         return RedirectResponse(url="/dashboard")
-    return templates.TemplateResponse("login.html", {"request": request})
+    resp = templates.TemplateResponse("login.html", {"request": request})
+    resp.delete_cookie("access_token")
+    return resp
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
