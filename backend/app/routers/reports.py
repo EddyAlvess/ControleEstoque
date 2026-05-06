@@ -19,10 +19,31 @@ async def get_summary(
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
     shift: str | None = Query(None),
+    category_id: int | None = Query(None),
+    product_id: int | None = Query(None),
     db: AsyncSession = Depends(get_db),
     _: WebUser = Depends(require_user),
 ):
-    return await report_service.get_summary(db, movement_type, date_from, date_to, shift)
+    return await report_service.get_summary(
+        db, movement_type, date_from, date_to, shift, category_id, product_id
+    )
+
+
+@router.get("/stock/category")
+async def stock_by_category(
+    db: AsyncSession = Depends(get_db),
+    _: WebUser = Depends(require_user),
+):
+    return await report_service.get_stock_by_category(db)
+
+
+@router.get("/stock/product")
+async def stock_by_product(
+    category_id: int = Query(...),
+    db: AsyncSession = Depends(get_db),
+    _: WebUser = Depends(require_user),
+):
+    return await report_service.get_stock_by_product(db, category_id)
 
 
 @router.get("/export")
@@ -33,11 +54,12 @@ async def export_csv(
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
     shift: str | None = Query(None),
+    category_id: int | None = Query(None),
     db: AsyncSession = Depends(get_db),
     _: WebUser = Depends(require_user),
 ):
     csv_content = await report_service.export_csv(
-        db, movement_type, operator_id, product_id, date_from, date_to, shift
+        db, movement_type, operator_id, product_id, date_from, date_to, shift, category_id
     )
     return StreamingResponse(
         iter([csv_content.encode("utf-8-sig")]),

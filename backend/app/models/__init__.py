@@ -4,5 +4,6 @@ from app.models.product import Product
 from app.models.movement import InventoryMovement
 from app.models.firmware import FirmwareVersion
 from app.models.shift import Shift
+from app.models.category import Category
 
-__all__ = ["WebUser", "Operator", "Product", "InventoryMovement", "FirmwareVersion", "Shift"]
+__all__ = ["WebUser", "Operator", "Product", "InventoryMovement", "FirmwareVersion", "Shift", "Category"]

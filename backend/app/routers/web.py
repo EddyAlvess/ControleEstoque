@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -9,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import require_admin, require_user
 from app.services.auth_service import decode_access_token
+from app.models.category import Category
 from app.models.movement import InventoryMovement
 from app.models.operator import Operator
 from app.models.product import Product
@@ -60,8 +62,8 @@ async def dashboard(
     )).scalar()
 
     recent_rows, _ = await report_service.get_movements_query(db, page=1, page_size=10)
-
     summary = await report_service.get_summary(db, date_from=today_start)
+    stock_by_category = await report_service.get_stock_by_category(db)
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -71,34 +73,9 @@ async def dashboard(
             total_exit=float(total_exit),
             recent=recent_rows,
             summary=[s.model_dump() for s in summary],
+            stock_by_category=stock_by_category,
             now=datetime.now().strftime("%d/%m/%Y"),
         ),
-    )
-
-
-@router.get("/movements", response_class=HTMLResponse)
-async def movements_page(
-    request: Request,
-    movement_type: str | None = Query(None),
-    operator_id: int | None = Query(None),
-    product_id: int | None = Query(None),
-    shift: str | None = Query(None),
-    page: int = Query(1, ge=1),
-    db: AsyncSession = Depends(get_db),
-    user: WebUser = Depends(require_user),
-):
-    rows, total = await report_service.get_movements_query(
-        db, movement_type, operator_id, product_id, None, None, shift, page, 50
-    )
-    operators = (await db.execute(select(Operator).where(Operator.is_active == True).order_by(Operator.name))).scalars().all()
-    products = (await db.execute(select(Product).where(Product.is_active == True).order_by(Product.name))).scalars().all()
-    pages = (total + 49) // 50
-    return templates.TemplateResponse(
-        "movements.html",
-        _ctx(request, user, rows=rows, total=total, page=page, pages=pages,
-             operators=operators, products=products,
-             filters={"movement_type": movement_type, "operator_id": operator_id,
-                      "product_id": product_id, "shift": shift}),
     )
 
 
@@ -107,28 +84,77 @@ async def reports_page(
     request: Request,
     movement_type: str | None = Query(None),
     operator_id: int | None = Query(None),
+    category_id: int | None = Query(None),
     product_id: int | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     shift: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1),
     db: AsyncSession = Depends(get_db),
     user: WebUser = Depends(require_user),
 ):
     df = datetime.fromisoformat(date_from) if date_from else None
     dt = datetime.fromisoformat(date_to) if date_to else None
-    summary = await report_service.get_summary(db, movement_type, df, dt, shift)
+
     rows, total = await report_service.get_movements_query(
-        db, movement_type, operator_id, product_id, df, dt, shift, page=1, page_size=200
+        db, movement_type, operator_id, product_id, df, dt, shift, page, page_size, category_id
     )
-    operators = (await db.execute(select(Operator).where(Operator.is_active == True).order_by(Operator.name))).scalars().all()
-    products = (await db.execute(select(Product).where(Product.is_active == True).order_by(Product.name))).scalars().all()
+    summary = await report_service.get_summary(
+        db, movement_type, df, dt, shift, category_id, product_id
+    )
+
+    operators = (await db.execute(
+        select(Operator).where(Operator.is_active == True).order_by(Operator.name)
+    )).scalars().all()
+    categories = (await db.execute(
+        select(Category).where(Category.is_active == True).order_by(Category.name)
+    )).scalars().all()
+    products = (await db.execute(
+        select(Product).where(Product.is_active == True).order_by(Product.name)
+    )).scalars().all()
+    shifts = (await db.execute(
+        select(Shift).where(Shift.is_active == True).order_by(Shift.start_hour)
+    )).scalars().all()
+
+    pages = max(1, (total + page_size - 1) // page_size)
+
+    filter_params = urlencode({k: v for k, v in {
+        "movement_type": movement_type,
+        "operator_id": operator_id,
+        "category_id": category_id,
+        "product_id": product_id,
+        "date_from": date_from,
+        "date_to": date_to,
+        "shift": shift,
+        "page_size": page_size,
+    }.items() if v is not None})
+
     return templates.TemplateResponse(
         "reports.html",
-        _ctx(request, user, summary=summary, rows=rows, total=total,
-             operators=operators, products=products,
-             filters={"movement_type": movement_type, "operator_id": operator_id,
-                      "product_id": product_id, "date_from": date_from,
-                      "date_to": date_to, "shift": shift}),
+        _ctx(
+            request, user,
+            summary=summary,
+            rows=rows,
+            total=total,
+            operators=operators,
+            categories=categories,
+            products=products,
+            shifts=shifts,
+            page=page,
+            page_size=page_size,
+            pages=pages,
+            filter_params=filter_params,
+            filters={
+                "movement_type": movement_type,
+                "operator_id": operator_id,
+                "category_id": category_id,
+                "product_id": product_id,
+                "date_from": date_from,
+                "date_to": date_to,
+                "shift": shift,
+            },
+        ),
     )
 
 
@@ -158,8 +184,36 @@ async def admin_products(
     db: AsyncSession = Depends(get_db),
     user: WebUser = Depends(require_admin),
 ):
-    products = (await db.execute(select(Product).order_by(Product.name))).scalars().all()
-    return templates.TemplateResponse("admin/products.html", _ctx(request, user, products=products))
+    rows = (await db.execute(
+        select(Product, Category.name.label("category_name"))
+        .outerjoin(Category, Product.category_id == Category.id)
+        .order_by(Product.name)
+    )).all()
+    prods_list = [
+        {
+            "id": r[0].id, "sku": r[0].sku, "name": r[0].name,
+            "unit": r[0].unit, "category_id": r[0].category_id,
+            "category_name": r[1], "is_active": r[0].is_active,
+        }
+        for r in rows
+    ]
+    categories = (await db.execute(
+        select(Category).where(Category.is_active == True).order_by(Category.name)
+    )).scalars().all()
+    return templates.TemplateResponse(
+        "admin/products.html",
+        _ctx(request, user, products=prods_list, categories=categories),
+    )
+
+
+@router.get("/admin/categories", response_class=HTMLResponse)
+async def admin_categories(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: WebUser = Depends(require_admin),
+):
+    cats = (await db.execute(select(Category).order_by(Category.name))).scalars().all()
+    return templates.TemplateResponse("admin/categories.html", _ctx(request, user, categories=cats))
 
 
 @router.get("/admin/shifts", response_class=HTMLResponse)

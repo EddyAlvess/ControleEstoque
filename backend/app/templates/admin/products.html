@@ -12,20 +12,24 @@
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>SKU</th><th>Nome</th><th>Unidade</th><th>Status</th><th>Ações</th></tr></thead>
+      <thead>
+        <tr><th>SKU</th><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Status</th><th>Ações</th></tr>
+      </thead>
       <tbody>
         {% for p in products %}
         <tr>
           <td><code>{{ p.sku }}</code></td>
           <td class="fw-semibold">{{ p.name }}</td>
+          <td>{{ p.category_name or '—' }}</td>
           <td>{{ p.unit }}</td>
           <td>
             {% if p.is_active %}<span class="badge bg-success">Ativo</span>
             {% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
           </td>
           <td>
-            <button class="btn btn-sm btn-outline-danger" onclick="toggleProd({{ p.id }}, {{ p.is_active|lower }})">
-              <i class="bi bi-{% if p.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+            <button class="btn btn-sm btn-outline-primary"
+              onclick="openEdit({{ p.id }}, {{ p.sku | tojson }}, {{ p.name | tojson }}, {{ p.unit | tojson }}, {{ p.category_id or 'null' }}, {{ p.is_active | lower }})">
+              <i class="bi bi-pencil"></i>
             </button>
           </td>
         </tr>
@@ -35,14 +39,33 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal: Novo Produto -->
 <div class="modal fade" id="addModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Novo Produto</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header">
+        <h5 class="modal-title">Novo Produto</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
-        <div class="mb-3"><label class="form-label">SKU</label><input type="text" id="fSku" class="form-control" required placeholder="EX: SORV-MOR-1L"></div>
-        <div class="mb-3"><label class="form-label">Nome</label><input type="text" id="fName" class="form-control" required placeholder="Sorvete Morango 1L"></div>
+        <div class="mb-3">
+          <label class="form-label">SKU <span class="text-danger">*</span></label>
+          <input type="text" id="fSku" class="form-control text-uppercase" placeholder="SORV-MOR-1L"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nome <span class="text-danger">*</span></label>
+          <input type="text" id="fName" class="form-control" placeholder="Sorvete Morango 1L">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Categoria</label>
+          <select id="fCategory" class="form-select">
+            <option value="">— Sem categoria —</option>
+            {% for c in categories %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
         <div class="mb-3">
           <label class="form-label">Unidade</label>
           <select id="fUnit" class="form-select">
@@ -61,31 +84,107 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Editar Produto -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Produto</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="eId">
+        <div class="mb-3">
+          <label class="form-label">SKU <span class="text-danger">*</span></label>
+          <input type="text" id="eSku" class="form-control text-uppercase"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nome <span class="text-danger">*</span></label>
+          <input type="text" id="eName" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Categoria</label>
+          <select id="eCategory" class="form-select">
+            <option value="">— Sem categoria —</option>
+            {% for c in categories %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Unidade</label>
+          <select id="eUnit" class="form-select">
+            <option value="L">Litros (L)</option>
+            <option value="kg">Quilograma (kg)</option>
+            <option value="un">Unidade (un)</option>
+            <option value="tub">Pote/Tub (tub)</option>
+            <option value="cx">Caixa (cx)</option>
+          </select>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="eActive">
+          <label class="form-check-label" for="eActive">Ativo</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveEdit()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 async function createProd() {
+  const sku = document.getElementById('fSku').value.trim();
+  const name = document.getElementById('fName').value.trim();
+  if (!sku || !name) { alert('SKU e Nome são obrigatórios.'); return; }
+  const catVal = document.getElementById('fCategory').value;
   const res = await fetch('/api/v1/products', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
-      sku: document.getElementById('fSku').value,
-      name: document.getElementById('fName').value,
+      sku, name,
       unit: document.getElementById('fUnit').value,
-    })
+      category_id: catVal ? parseInt(catVal) : null,
+    }),
   });
   if (res.ok) location.reload();
   else alert('Erro: ' + (await res.json()).detail);
 }
 
-async function toggleProd(id, isActive) {
+function openEdit(id, sku, name, unit, categoryId, isActive) {
+  document.getElementById('eId').value = id;
+  document.getElementById('eSku').value = sku;
+  document.getElementById('eName').value = name;
+  document.getElementById('eUnit').value = unit;
+  document.getElementById('eActive').checked = isActive;
+  document.getElementById('eCategory').value = categoryId ?? '';
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+async function saveEdit() {
+  const id = document.getElementById('eId').value;
+  const sku = document.getElementById('eSku').value.trim();
+  const name = document.getElementById('eName').value.trim();
+  if (!sku || !name) { alert('SKU e Nome são obrigatórios.'); return; }
+  const catVal = document.getElementById('eCategory').value;
   const res = await fetch(`/api/v1/products/${id}`, {
     method: 'PUT',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({is_active: !isActive})
+    body: JSON.stringify({
+      sku, name,
+      unit: document.getElementById('eUnit').value,
+      category_id: catVal ? parseInt(catVal) : null,
+      is_active: document.getElementById('eActive').checked,
+    }),
   });
   if (res.ok) location.reload();
+  else alert('Erro: ' + (await res.json()).detail);
 }
 </script>
 {% endblock %}

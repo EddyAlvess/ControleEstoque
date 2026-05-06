@@ -2,9 +2,10 @@ import csv
 import io
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.category import Category
 from app.models.movement import InventoryMovement
 from app.models.operator import Operator
 from app.models.product import Product
@@ -20,7 +21,8 @@ async def get_movements_query(
     date_to: datetime | None = None,
     shift: str | None = None,
     page: int = 1,
-    page_size: int = 50,
+    page_size: int = 10,
+    category_id: int | None = None,
 ) -> tuple[list[dict], int]:
     stmt = (
         select(
@@ -28,9 +30,12 @@ async def get_movements_query(
             Operator.name.label("operator_name"),
             Product.name.label("product_name"),
             Product.unit.label("product_unit"),
+            Product.category_id.label("category_id"),
+            Category.name.label("category_name"),
         )
         .join(Operator, InventoryMovement.operator_id == Operator.id)
         .join(Product, InventoryMovement.product_id == Product.id)
+        .outerjoin(Category, Product.category_id == Category.id)
     )
 
     if movement_type:
@@ -39,6 +44,8 @@ async def get_movements_query(
         stmt = stmt.where(InventoryMovement.operator_id == operator_id)
     if product_id:
         stmt = stmt.where(InventoryMovement.product_id == product_id)
+    if category_id:
+        stmt = stmt.where(Product.category_id == category_id)
     if date_from:
         stmt = stmt.where(InventoryMovement.recorded_at >= date_from)
     if date_to:
@@ -64,6 +71,8 @@ async def get_movements_query(
             "product_id": mv.product_id,
             "product_name": row.product_name,
             "product_unit": row.product_unit,
+            "category_id": row.category_id,
+            "category_name": row.category_name,
             "quantity": float(mv.quantity),
             "shift": mv.shift,
             "device_id": mv.device_id,
@@ -80,6 +89,8 @@ async def get_summary(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     shift: str | None = None,
+    category_id: int | None = None,
+    product_id: int | None = None,
 ) -> list[ReportSummaryItem]:
     stmt = (
         select(
@@ -101,6 +112,10 @@ async def get_summary(
 
     if movement_type:
         stmt = stmt.where(InventoryMovement.movement_type == movement_type)
+    if product_id:
+        stmt = stmt.where(InventoryMovement.product_id == product_id)
+    if category_id:
+        stmt = stmt.where(Product.category_id == category_id)
     if date_from:
         stmt = stmt.where(InventoryMovement.recorded_at >= date_from)
     if date_to:
@@ -122,6 +137,73 @@ async def get_summary(
     ]
 
 
+async def get_stock_by_category(db: AsyncSession) -> list[dict]:
+    """Saldo acumulado de todos os tempos, agrupado por categoria."""
+    stmt = (
+        select(
+            Category.id.label("category_id"),
+            Category.name.label("category_name"),
+            func.coalesce(
+                func.sum(case((InventoryMovement.movement_type == "ENTRY", InventoryMovement.quantity), else_=0)), 0
+            ).label("total_entry"),
+            func.coalesce(
+                func.sum(case((InventoryMovement.movement_type == "EXIT", InventoryMovement.quantity), else_=0)), 0
+            ).label("total_exit"),
+        )
+        .select_from(Category)
+        .outerjoin(Product, (Product.category_id == Category.id) & (Product.is_active == True))
+        .outerjoin(InventoryMovement, InventoryMovement.product_id == Product.id)
+        .where(Category.is_active == True)
+        .group_by(Category.id, Category.name)
+        .order_by(Category.name)
+    )
+    rows = (await db.execute(stmt)).all()
+    return [
+        {
+            "category_id": r.category_id,
+            "category_name": r.category_name,
+            "total_entry": float(r.total_entry),
+            "total_exit": float(r.total_exit),
+            "balance": float(r.total_entry) - float(r.total_exit),
+        }
+        for r in rows
+    ]
+
+
+async def get_stock_by_product(db: AsyncSession, category_id: int) -> list[dict]:
+    """Saldo acumulado por produto dentro de uma categoria."""
+    stmt = (
+        select(
+            Product.id.label("product_id"),
+            Product.name.label("product_name"),
+            Product.unit.label("product_unit"),
+            func.coalesce(
+                func.sum(case((InventoryMovement.movement_type == "ENTRY", InventoryMovement.quantity), else_=0)), 0
+            ).label("total_entry"),
+            func.coalesce(
+                func.sum(case((InventoryMovement.movement_type == "EXIT", InventoryMovement.quantity), else_=0)), 0
+            ).label("total_exit"),
+        )
+        .select_from(Product)
+        .outerjoin(InventoryMovement, InventoryMovement.product_id == Product.id)
+        .where(Product.category_id == category_id, Product.is_active == True)
+        .group_by(Product.id, Product.name, Product.unit)
+        .order_by(Product.name)
+    )
+    rows = (await db.execute(stmt)).all()
+    return [
+        {
+            "product_id": r.product_id,
+            "product_name": r.product_name,
+            "product_unit": r.product_unit,
+            "total_entry": float(r.total_entry),
+            "total_exit": float(r.total_exit),
+            "balance": float(r.total_entry) - float(r.total_exit),
+        }
+        for r in rows
+    ]
+
+
 async def export_csv(
     db: AsyncSession,
     movement_type: str | None = None,
@@ -130,28 +212,28 @@ async def export_csv(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     shift: str | None = None,
+    category_id: int | None = None,
 ) -> str:
     rows, _ = await get_movements_query(
         db, movement_type, operator_id, product_id, date_from, date_to, shift,
-        page=1, page_size=100000,
+        page=1, page_size=100000, category_id=category_id,
     )
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "ID", "Tipo", "Operador", "Produto", "Unidade",
+        "ID", "Tipo", "Categoria", "Operador", "Produto", "Unidade",
         "Quantidade", "Turno", "Terminal", "Observações", "Data/Hora Registro",
     ])
     for r in rows:
         tipo = "Entrada" if r["movement_type"] == "ENTRY" else "Saída"
-        shift_map = {"MORNING": "Manhã", "AFTERNOON": "Tarde", "NIGHT": "Noite"}
         writer.writerow([
-            r["id"],
-            tipo,
+            r["id"], tipo,
+            r.get("category_name") or "",
             r["operator_name"],
             r["product_name"],
             r["product_unit"],
             r["quantity"],
-            shift_map.get(r["shift"] or "", r["shift"] or ""),
+            r["shift"] or "",
             r["device_id"] or "",
             r["notes"] or "",
             r["recorded_at"].strftime("%d/%m/%Y %H:%M:%S") if r["recorded_at"] else "",

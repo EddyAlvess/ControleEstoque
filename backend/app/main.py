@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import auth, movements, operators, ota, products, reports, shifts, users, web
+from app.routers import auth, categories, movements, operators, ota, products, reports, shifts, users, web
 
 
 @asynccontextmanager
@@ -27,6 +27,7 @@ app.include_router(operators.router)
 app.include_router(products.router)
 app.include_router(movements.router)
 app.include_router(reports.router)
+app.include_router(categories.router)
 app.include_router(shifts.router)
 app.include_router(ota.router)
 
