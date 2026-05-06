@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Turnos - SorvPel{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h5 class="mb-0 fw-bold"><i class="bi bi-clock me-2"></i>Gerenciar Turnos</h5>
+    <small class="text-muted">O turno é detectado automaticamente pelo horário de cada registro</small>
+  </div>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-plus-lg me-1"></i>Novo Turno
+  </button>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Rótulo</th>
+          <th>Início</th>
+          <th>Fim</th>
+          <th>Cobertura</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in shifts %}
+        <tr>
+          <td><code>{{ s.name }}</code></td>
+          <td class="fw-semibold">{{ s.label }}</td>
+          <td>{{ "%02d:00"|format(s.start_hour) }}</td>
+          <td>{{ "%02d:00"|format(s.end_hour) }}</td>
+          <td>
+            <span class="text-muted small">
+              {% if s.start_hour < s.end_hour %}
+                {{ "%02d:00"|format(s.start_hour) }} – {{ "%02d:00"|format(s.end_hour) }}
+              {% else %}
+                {{ "%02d:00"|format(s.start_hour) }} – 00:00 / 00:00 – {{ "%02d:00"|format(s.end_hour) }}
+                <span class="badge bg-info text-dark ms-1">vira meia-noite</span>
+              {% endif %}
+            </span>
+          </td>
+          <td>
+            {% if s.is_active %}<span class="badge bg-success">Ativo</span>
+            {% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
+          </td>
+          <td class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-primary"
+              onclick="openEdit({{ s.id }}, '{{ s.label }}', {{ s.start_hour }}, {{ s.end_hour }}, {{ s.is_active|lower }})">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+              onclick="deleteShift({{ s.id }}, '{{ s.label }}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Nenhum turno cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="alert alert-info d-flex align-items-start gap-2">
+  <i class="bi bi-info-circle-fill mt-1"></i>
+  <div>
+    <strong>Como funciona:</strong> ao registrar uma entrada ou saída, o servidor detecta automaticamente
+    o turno com base no horário de <code>recorded_at</code>. O campo <em>Início</em> é inclusivo e
+    <em>Fim</em> é exclusivo. Turnos que cruzam meia-noite (ex: 22:00 – 06:00) são suportados.
+  </div>
+</div>
+
+<!-- Modal: Novo Turno -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo Turno</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Nome interno <span class="text-danger">*</span></label>
+          <input type="text" id="fName" class="form-control text-uppercase" placeholder="Ex: NOTURNO"
+            oninput="this.value=this.value.toUpperCase()">
+          <div class="form-text">Identificador único armazenado nos registros de movimento.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Rótulo <span class="text-danger">*</span></label>
+          <input type="text" id="fLabel" class="form-control" placeholder="Ex: Noturno">
+        </div>
+        <div class="row">
+          <div class="col">
+            <label class="form-label">Hora início (0–23) <span class="text-danger">*</span></label>
+            <input type="number" id="fStart" class="form-control" min="0" max="23" placeholder="22">
+          </div>
+          <div class="col">
+            <label class="form-label">Hora fim (0–23, exclusivo) <span class="text-danger">*</span></label>
+            <input type="number" id="fEnd" class="form-control" min="0" max="23" placeholder="6">
+          </div>
+        </div>
+        <div class="form-text mt-1">
+          Se <em>início &gt; fim</em> o turno cruza meia-noite (ex: 22 início, 6 fim = 22:00–06:00).
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="createShift()">Criar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar Turno -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Turno</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="eId">
+        <div class="mb-3">
+          <label class="form-label">Rótulo</label>
+          <input type="text" id="eLabel" class="form-control">
+        </div>
+        <div class="row">
+          <div class="col">
+            <label class="form-label">Hora início (0–23)</label>
+            <input type="number" id="eStart" class="form-control" min="0" max="23">
+          </div>
+          <div class="col">
+            <label class="form-label">Hora fim (0–23, exclusivo)</label>
+            <input type="number" id="eEnd" class="form-control" min="0" max="23">
+          </div>
+        </div>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="eActive">
+          <label class="form-check-label" for="eActive">Ativo</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveEdit()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function createShift() {
+  const body = {
+    name:       document.getElementById('fName').value.trim(),
+    label:      document.getElementById('fLabel').value.trim(),
+    start_hour: parseInt(document.getElementById('fStart').value),
+    end_hour:   parseInt(document.getElementById('fEnd').value),
+  };
+  if (!body.name || !body.label || isNaN(body.start_hour) || isNaN(body.end_hour)) {
+    alert('Preencha todos os campos.'); return;
+  }
+  const res = await fetch('/api/v1/shifts', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (res.ok) location.reload();
+  else alert('Erro: ' + (await res.json()).detail);
+}
+
+function openEdit(id, label, start, end, active) {
+  document.getElementById('eId').value    = id;
+  document.getElementById('eLabel').value = label;
+  document.getElementById('eStart').value = start;
+  document.getElementById('eEnd').value   = end;
+  document.getElementById('eActive').checked = active;
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+async function saveEdit() {
+  const id = document.getElementById('eId').value;
+  const body = {
+    label:      document.getElementById('eLabel').value.trim(),
+    start_hour: parseInt(document.getElementById('eStart').value),
+    end_hour:   parseInt(document.getElementById('eEnd').value),
+    is_active:  document.getElementById('eActive').checked,
+  };
+  const res = await fetch(`/api/v1/shifts/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (res.ok) location.reload();
+  else alert('Erro: ' + (await res.json()).detail);
+}
+
+async function deleteShift(id, label) {
+  if (!confirm(`Excluir o turno "${label}"?\n\nRegistros já gravados não serão afetados.`)) return;
+  const res = await fetch(`/api/v1/shifts/${id}`, { method: 'DELETE' });
+  if (res.ok) location.reload();
+  else alert('Erro ao excluir.');
+}
+</script>
+{% endblock %}

@@ -9,7 +9,7 @@ class MovementCreate(BaseModel):
     operator_id: int
     product_id: int
     quantity: float
-    shift: Literal["MORNING", "AFTERNOON", "NIGHT"] | None = None
+    shift: str | None = None  # ignorado — servidor detecta pelo horário configurado
     device_id: str | None = None
     notes: str | None = None
     recorded_at: datetime

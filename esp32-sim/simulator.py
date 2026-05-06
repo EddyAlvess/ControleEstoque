@@ -20,6 +20,8 @@ API_KEY      = os.getenv("API_KEY", "")
 DEVICE_ID    = os.getenv("DEVICE_ID", "SIM-TERMINAL-01")
 IDLE_TIMEOUT = int(os.getenv("MENU_IDLE_MS", "60000")) / 1000.0
 
+_shifts: list[dict] = []  # carregado da API em fetch_data
+
 
 class State(Enum):
     IDLE            = "IDLE"
@@ -34,12 +36,19 @@ class State(Enum):
 
 
 def current_shift() -> str:
-    h = datetime.now().hour
-    if 6 <= h < 14:
-        return "MORNING"
-    if 14 <= h < 22:
-        return "AFTERNOON"
-    return "NIGHT"
+    """Detecta o turno atual com base nos turnos carregados da API."""
+    hour = datetime.now().hour
+    for s in _shifts:
+        if not s.get("is_active", True):
+            continue
+        start, end = s["start_hour"], s["end_hour"]
+        if start < end:
+            if start <= hour < end:
+                return s["name"]
+        else:
+            if hour >= start or hour < end:
+                return s["name"]
+    return "SEM TURNO"
 
 
 # ── State machine ─────────────────────────────────────────────────────────────
@@ -302,6 +311,7 @@ class Simulator:
     # ── API calls ─────────────────────────────────────────────────────────────
 
     def fetch_data(self):
+        global _shifts
         self._set_lcd(
             "   Conectando...    ",
             "  Buscando dados... ",
@@ -324,6 +334,14 @@ class Simulator:
             self.add_log(f"GET /api/v1/products  -> {len(self.products)} registros")
         except Exception as e:
             self.add_log(f"ERRO /api/v1/products: {e}")
+
+        try:
+            r = requests.get(f"{SERVER_URL}/api/v1/shifts", headers=headers, timeout=8)
+            r.raise_for_status()
+            _shifts = r.json()
+            self.add_log(f"GET /api/v1/shifts    -> {len(_shifts)} turnos")
+        except Exception as e:
+            self.add_log(f"ERRO /api/v1/shifts: {e}")
 
         self._go(State.IDLE)
 

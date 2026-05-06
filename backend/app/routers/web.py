@@ -12,6 +12,7 @@ from app.services.auth_service import decode_access_token
 from app.models.movement import InventoryMovement
 from app.models.operator import Operator
 from app.models.product import Product
+from app.models.shift import Shift
 from app.models.user import WebUser
 from app.services import report_service
 
@@ -159,3 +160,13 @@ async def admin_products(
 ):
     products = (await db.execute(select(Product).order_by(Product.name))).scalars().all()
     return templates.TemplateResponse("admin/products.html", _ctx(request, user, products=products))
+
+
+@router.get("/admin/shifts", response_class=HTMLResponse)
+async def admin_shifts(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: WebUser = Depends(require_admin),
+):
+    shifts = (await db.execute(select(Shift).order_by(Shift.start_hour))).scalars().all()
+    return templates.TemplateResponse("admin/shifts.html", _ctx(request, user, shifts=shifts))

@@ -1,16 +1,30 @@
 from datetime import datetime
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import require_user, verify_esp32_key
 from app.models.movement import InventoryMovement
+from app.models.shift import Shift
 from app.models.user import WebUser
 from app.schemas.movement import MovementCreate, MovementRead
 from app.services import report_service
 
 router = APIRouter(prefix="/api/v1/movements", tags=["movements"])
+
+
+async def _detect_shift(db: AsyncSession, recorded_at: datetime) -> str | None:
+    """Detecta o turno com base no horário de recorded_at e nos turnos configurados."""
+    hour = recorded_at.hour
+    result = await db.execute(select(Shift).where(Shift.is_active == True))
+    for shift in result.scalars().all():
+        if shift.contains_hour(hour):
+            return shift.name
+    return None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -19,12 +33,13 @@ async def create_movement(
     db: AsyncSession = Depends(get_db),
     _: None = Depends(verify_esp32_key),
 ):
+    shift = await _detect_shift(db, data.recorded_at)
     mv = InventoryMovement(
         movement_type=data.movement_type,
         operator_id=data.operator_id,
         product_id=data.product_id,
         quantity=data.quantity,
-        shift=data.shift,
+        shift=shift,
         device_id=data.device_id,
         notes=data.notes,
         recorded_at=data.recorded_at,
@@ -32,7 +47,7 @@ async def create_movement(
     db.add(mv)
     await db.commit()
     await db.refresh(mv)
-    return {"id": mv.id, "message": "Movimento registrado"}
+    return {"id": mv.id, "shift": shift, "message": "Movimento registrado"}
 
 
 @router.get("")
