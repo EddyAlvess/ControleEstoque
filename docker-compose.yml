@@ -1,0 +1,61 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-controle_estoque}
+      POSTGRES_USER: ${POSTGRES_USER:-sorv_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sorv_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-sorv_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-controle_estoque}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      ESP32_API_KEY: ${ESP32_API_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend_net
+      - frontend_net
+    volumes:
+      - firmware_uploads:/app/uploads
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - frontend_net
+
+volumes:
+  postgres_data:
+  firmware_uploads:
+
+networks:
+  backend_net:
+    internal: true
+  frontend_net:

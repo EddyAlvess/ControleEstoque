@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Usuários Web - SorvPel{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h5 class="mb-0 fw-bold"><i class="bi bi-person-gear me-2"></i>Usuários Web</h5>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-plus-lg me-1"></i>Novo Usuário
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Usuário</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Ativo</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="fw-semibold">{{ u.username }}</td>
+          <td>{{ u.full_name }}</td>
+          <td class="text-muted small">{{ u.email or '-' }}</td>
+          <td>
+            <span class="badge {% if u.role == 'admin' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ u.role }}</span>
+          </td>
+          <td>
+            {% if u.is_active %}<span class="badge bg-success">Ativo</span>
+            {% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-warning"
+              onclick="resetPwd({{ u.id }}, '{{ u.username }}')">
+              <i class="bi bi-key"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+              onclick="toggleUser({{ u.id }}, {{ u.is_active|lower }})">
+              <i class="bi bi-{% if u.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Novo Usuário -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Novo Usuário</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <form id="addForm">
+          <div class="mb-3"><label class="form-label">Usuário</label><input type="text" id="fUsername" class="form-control" required></div>
+          <div class="mb-3"><label class="form-label">Nome completo</label><input type="text" id="fName" class="form-control" required></div>
+          <div class="mb-3"><label class="form-label">E-mail</label><input type="email" id="fEmail" class="form-control"></div>
+          <div class="mb-3"><label class="form-label">Senha</label><input type="password" id="fPassword" class="form-control" required></div>
+          <div class="mb-3">
+            <label class="form-label">Perfil</label>
+            <select id="fRole" class="form-select"><option value="user">Usuário</option><option value="admin">Admin</option></select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="createUser()">Criar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function createUser() {
+  const res = await fetch('/api/v1/users', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      username: document.getElementById('fUsername').value,
+      full_name: document.getElementById('fName').value,
+      email: document.getElementById('fEmail').value || null,
+      password: document.getElementById('fPassword').value,
+      role: document.getElementById('fRole').value,
+    })
+  });
+  if (res.ok) location.reload();
+  else alert('Erro: ' + (await res.json()).detail);
+}
+
+async function resetPwd(id, username) {
+  const pwd = prompt(`Nova senha para ${username}:`);
+  if (!pwd) return;
+  const res = await fetch(`/api/v1/users/${id}/reset-password`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({new_password: pwd})
+  });
+  if (res.ok) alert('Senha redefinida!');
+  else alert('Erro: ' + (await res.json()).detail);
+}
+
+async function toggleUser(id, isActive) {
+  const res = await fetch(`/api/v1/users/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({is_active: !isActive})
+  });
+  if (res.ok) location.reload();
+}
+</script>
+{% endblock %}

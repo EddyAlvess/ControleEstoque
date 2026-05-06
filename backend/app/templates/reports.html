@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Relatórios - SorvPel{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h5 class="mb-0 fw-bold"><i class="bi bi-bar-chart-line me-2"></i>Relatórios</h5>
+  <a href="/api/v1/reports/export?{{ request.query_string.decode() }}" class="btn btn-success btn-sm">
+    <i class="bi bi-download me-1"></i>Exportar CSV
+  </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-2">
+        <label class="form-label small mb-1">Tipo</label>
+        <select name="movement_type" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="ENTRY" {% if filters.movement_type == 'ENTRY' %}selected{% endif %}>Entrada</option>
+          <option value="EXIT"  {% if filters.movement_type == 'EXIT'  %}selected{% endif %}>Saída</option>
+        </select>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small mb-1">De</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from or '' }}">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small mb-1">Até</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ filters.date_to or '' }}">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small mb-1">Turno</label>
+        <select name="shift" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="MORNING"   {% if filters.shift == 'MORNING'   %}selected{% endif %}>Manhã</option>
+          <option value="AFTERNOON" {% if filters.shift == 'AFTERNOON' %}selected{% endif %}>Tarde</option>
+          <option value="NIGHT"     {% if filters.shift == 'NIGHT'     %}selected{% endif %}>Noite</option>
+        </select>
+      </div>
+      <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm w-100">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Resumo agregado -->
+{% if summary %}
+<div class="card mb-3">
+  <div class="card-header bg-white fw-semibold">Totais por Produto</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Produto</th><th>Tipo</th><th>Total</th><th>Registros</th></tr></thead>
+      <tbody>
+        {% for s in summary %}
+        <tr>
+          <td>{{ s.product_name }}</td>
+          <td>
+            {% if s.movement_type == 'ENTRY' %}<span class="badge badge-entry">Entrada</span>
+            {% else %}<span class="badge badge-exit">Saída</span>{% endif %}
+          </td>
+          <td class="fw-semibold">{{ "%.2f"|format(s.total_quantity) }} {{ s.product_unit }}</td>
+          <td class="text-muted">{{ s.count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Detalhe -->
+<div class="card">
+  <div class="card-header bg-white fw-semibold">Detalhamento ({{ total }} registros)</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr><th>Data/Hora</th><th>Tipo</th><th>Operador</th><th>Produto</th><th>Qtd</th><th>Turno</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="small text-muted">{{ r.recorded_at.strftime('%d/%m/%Y %H:%M') if r.recorded_at else '-' }}</td>
+            <td>
+              {% if r.movement_type == 'ENTRY' %}<span class="badge badge-entry">Entrada</span>
+              {% else %}<span class="badge badge-exit">Saída</span>{% endif %}
+            </td>
+            <td class="small">{{ r.operator_name }}</td>
+            <td class="small">{{ r.product_name }}</td>
+            <td class="small fw-semibold">{{ r.quantity }} {{ r.product_unit }}</td>
+            <td class="small">
+              {% if r.shift == 'MORNING' %}Manhã
+              {% elif r.shift == 'AFTERNOON' %}Tarde
+              {% elif r.shift == 'NIGHT' %}Noite
+              {% else %}-{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-4">Nenhum registro</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

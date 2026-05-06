@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Operadores - SorvPel{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Operadores de Fábrica</h5>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-plus-lg me-1"></i>Novo Operador
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Nome</th><th>Código (Crachá)</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for op in operators %}
+        <tr>
+          <td class="fw-semibold">{{ op.name }}</td>
+          <td><code>{{ op.badge_code }}</code></td>
+          <td>
+            {% if op.is_active %}<span class="badge bg-success">Ativo</span>
+            {% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-danger" onclick="toggleOp({{ op.id }}, {{ op.is_active|lower }})">
+              <i class="bi bi-{% if op.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Novo Operador</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Nome</label><input type="text" id="fName" class="form-control" required></div>
+        <div class="mb-3">
+          <label class="form-label">Código do Crachá</label>
+          <input type="text" id="fCode" class="form-control" required placeholder="Ex: 1001">
+          <div class="form-text">Código que o operador digitará ou escanerá no terminal ESP32</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="createOp()">Criar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function createOp() {
+  const res = await fetch('/api/v1/operators', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: document.getElementById('fName').value, badge_code: document.getElementById('fCode').value})
+  });
+  if (res.ok) location.reload();
+  else alert('Erro: ' + (await res.json()).detail);
+}
+
+async function toggleOp(id, isActive) {
+  const res = await fetch(`/api/v1/operators/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({is_active: !isActive})
+  });
+  if (res.ok) location.reload();
+}
+</script>
+{% endblock %}

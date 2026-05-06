@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\devic\\\\OneDrive\\\\Documentos\\\\SorvPel\\\\ControleEstoque\" -Recurse -Force)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Format-List)",
+      "WebSearch",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\devic\\\\OneDrive\\\\Documentos\\\\SorvPel\\\\ControleEstoque\" -Force | ForEach-Object { Write-Output \"$\\($_.FullName\\) | IsContainer: $\\($_.PSIsContainer\\)\" })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\devic\\\\OneDrive\\\\Documentos\\\\SorvPel\\\\ControleEstoque\" -File -Recurse | ForEach-Object { $_.FullName })",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Movimentos - SorvPel{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h5 class="mb-0 fw-bold"><i class="bi bi-arrow-left-right me-2"></i>Movimentos de Estoque</h5>
+  <span class="text-muted small">Total: {{ total }} registros</span>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-2">
+        <label class="form-label small mb-1">Tipo</label>
+        <select name="movement_type" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="ENTRY" {% if filters.movement_type == 'ENTRY' %}selected{% endif %}>Entrada</option>
+          <option value="EXIT"  {% if filters.movement_type == 'EXIT'  %}selected{% endif %}>Saída</option>
+        </select>
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label small mb-1">Operador</label>
+        <select name="operator_id" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for op in operators %}
+          <option value="{{ op.id }}" {% if filters.operator_id == op.id %}selected{% endif %}>{{ op.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label small mb-1">Produto</label>
+        <select name="product_id" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {% if filters.product_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small mb-1">Turno</label>
+        <select name="shift" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="MORNING"   {% if filters.shift == 'MORNING'   %}selected{% endif %}>Manhã</option>
+          <option value="AFTERNOON" {% if filters.shift == 'AFTERNOON' %}selected{% endif %}>Tarde</option>
+          <option value="NIGHT"     {% if filters.shift == 'NIGHT'     %}selected{% endif %}>Noite</option>
+        </select>
+      </div>
+      <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm w-100">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Data/Hora</th><th>Tipo</th><th>Operador</th><th>Produto</th>
+            <th>Quantidade</th><th>Turno</th><th>Terminal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="small text-muted">
+              {{ r.recorded_at.strftime('%d/%m/%Y %H:%M') if r.recorded_at else '-' }}
+            </td>
+            <td>
+              {% if r.movement_type == 'ENTRY' %}
+              <span class="badge badge-entry">Entrada</span>
+              {% else %}
+              <span class="badge badge-exit">Saída</span>
+              {% endif %}
+            </td>
+            <td class="small">{{ r.operator_name }}</td>
+            <td class="small">{{ r.product_name }}</td>
+            <td class="small fw-semibold">{{ r.quantity }} {{ r.product_unit }}</td>
+            <td class="small">
+              {% if r.shift == 'MORNING' %}Manhã
+              {% elif r.shift == 'AFTERNOON' %}Tarde
+              {% elif r.shift == 'NIGHT' %}Noite
+              {% else %}-{% endif %}
+            </td>
+            <td class="small text-muted">{{ r.device_id or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center text-muted py-4">Nenhum registro encontrado</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Paginação -->
+{% if pages > 1 %}
+<nav class="mt-3">
+  <ul class="pagination pagination-sm justify-content-center">
+    {% for p in range(1, pages + 1) %}
+    <li class="page-item {% if p == page %}active{% endif %}">
+      <a class="page-link" href="?page={{ p }}{% if filters.movement_type %}&movement_type={{ filters.movement_type }}{% endif %}{% if filters.operator_id %}&operator_id={{ filters.operator_id }}{% endif %}{% if filters.product_id %}&product_id={{ filters.product_id }}{% endif %}{% if filters.shift %}&shift={{ filters.shift }}{% endif %}">{{ p }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

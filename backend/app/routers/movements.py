@@ -1,0 +1,54 @@
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+from app.dependencies import require_user, verify_esp32_key
+from app.models.movement import InventoryMovement
+from app.models.user import WebUser
+from app.schemas.movement import MovementCreate, MovementRead
+from app.services import report_service
+
+router = APIRouter(prefix="/api/v1/movements", tags=["movements"])
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def create_movement(
+    data: MovementCreate,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(verify_esp32_key),
+):
+    mv = InventoryMovement(
+        movement_type=data.movement_type,
+        operator_id=data.operator_id,
+        product_id=data.product_id,
+        quantity=data.quantity,
+        shift=data.shift,
+        device_id=data.device_id,
+        notes=data.notes,
+        recorded_at=data.recorded_at,
+    )
+    db.add(mv)
+    await db.commit()
+    await db.refresh(mv)
+    return {"id": mv.id, "message": "Movimento registrado"}
+
+
+@router.get("")
+async def list_movements(
+    movement_type: str | None = Query(None),
+    operator_id: int | None = Query(None),
+    product_id: int | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    shift: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    _: WebUser = Depends(require_user),
+):
+    rows, total = await report_service.get_movements_query(
+        db, movement_type, operator_id, product_id, date_from, date_to, shift, page, page_size
+    )
+    return {"total": total, "page": page, "page_size": page_size, "items": rows}
