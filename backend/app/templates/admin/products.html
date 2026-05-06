@@ -27,8 +27,7 @@
             {% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
           </td>
           <td>
-            <button class="btn btn-sm btn-outline-primary"
-              onclick="openEdit({{ p.id }}, {{ p.sku | tojson }}, {{ p.name | tojson }}, {{ p.unit | tojson }}, {{ p.category_id or 'null' }}, {{ p.is_active | lower }})">
+            <button class="btn btn-sm btn-outline-primary" onclick="openEdit({{ p.id }})">
               <i class="bi bi-pencil"></i>
             </button>
           </td>
@@ -139,6 +138,8 @@
 
 {% block scripts %}
 <script>
+const PRODUCTS = {{ products | tojson }};
+
 async function createProd() {
   const sku = document.getElementById('fSku').value.trim();
   const name = document.getElementById('fName').value.trim();
@@ -157,13 +158,15 @@ async function createProd() {
   else alert('Erro: ' + (await res.json()).detail);
 }
 
-function openEdit(id, sku, name, unit, categoryId, isActive) {
-  document.getElementById('eId').value = id;
-  document.getElementById('eSku').value = sku;
-  document.getElementById('eName').value = name;
-  document.getElementById('eUnit').value = unit;
-  document.getElementById('eActive').checked = isActive;
-  document.getElementById('eCategory').value = categoryId ?? '';
+function openEdit(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('eId').value = p.id;
+  document.getElementById('eSku').value = p.sku;
+  document.getElementById('eName').value = p.name;
+  document.getElementById('eUnit').value = p.unit;
+  document.getElementById('eActive').checked = p.is_active;
+  document.getElementById('eCategory').value = p.category_id ?? '';
   new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 

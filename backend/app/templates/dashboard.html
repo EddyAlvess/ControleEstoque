@@ -7,79 +7,92 @@
   <small class="text-muted">Hoje: {{ now }}</small>
 </div>
 
-<!-- Resumo do dia -->
-<div class="row g-3 mb-4">
+<!-- Movimentação de hoje -->
+<div class="row g-3 mb-3">
   <div class="col-md-4">
     <div class="card stat-card text-center p-3">
-      <div class="text-success mb-1"><i class="bi bi-arrow-down-circle-fill" style="font-size:2rem;"></i></div>
+      <div class="text-success mb-1"><i class="bi bi-arrow-down-circle-fill" style="font-size:1.8rem;"></i></div>
       <div class="display-6 text-success">{{ "%.1f"|format(total_entry) }}</div>
       <div class="text-muted small">Entradas Hoje</div>
     </div>
   </div>
   <div class="col-md-4">
     <div class="card stat-card text-center p-3">
-      <div class="text-danger mb-1"><i class="bi bi-arrow-up-circle-fill" style="font-size:2rem;"></i></div>
+      <div class="text-danger mb-1"><i class="bi bi-arrow-up-circle-fill" style="font-size:1.8rem;"></i></div>
       <div class="display-6 text-danger">{{ "%.1f"|format(total_exit) }}</div>
       <div class="text-muted small">Saídas Hoje</div>
     </div>
   </div>
   <div class="col-md-4">
     <div class="card stat-card text-center p-3">
-      <div class="text-primary mb-1"><i class="bi bi-boxes" style="font-size:2rem;"></i></div>
+      <div class="text-primary mb-1"><i class="bi bi-boxes" style="font-size:1.8rem;"></i></div>
       <div class="display-6 text-primary">{{ "%.1f"|format(total_entry - total_exit) }}</div>
       <div class="text-muted small">Saldo Líquido Hoje</div>
     </div>
   </div>
 </div>
 
-<!-- Estoque por Categoria -->
-<div class="card mb-4">
-  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+<!-- Estoque total por categoria (com drilldown) -->
+<div class="card mb-3">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
     <span class="fw-semibold" id="stockTitle">
-      <i class="bi bi-bar-chart-steps me-2"></i>Estoque Acumulado por Categoria
+      <i class="bi bi-layers me-1"></i>Estoque Total por Categoria
     </span>
-    <div class="d-flex align-items-center gap-2">
-      <small class="text-muted d-none" id="dblClickHint">Duplo clique no gráfico ou nos cartões para detalhar</small>
-      <button class="btn btn-sm btn-outline-secondary d-none" id="backBtn" onclick="showCategories()">
-        ← Voltar
-      </button>
-    </div>
+    <button class="btn btn-sm btn-outline-secondary d-none" id="backBtn" onclick="showCategories()">
+      ← Voltar
+    </button>
   </div>
-  <div class="card-body" id="stockSection">
-    <div class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando...</div>
+  <div class="card-body pb-2" id="stockSection">
+    <div class="text-center text-muted py-3">
+      <i class="bi bi-hourglass-split"></i> Carregando…
+    </div>
   </div>
 </div>
 
-<!-- Últimos movimentos -->
-<div class="card">
-  <div class="card-header bg-white d-flex justify-content-between">
-    <span class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Últimos Registros</span>
-    <a href="/reports" class="btn btn-sm btn-outline-primary">Ver relatório</a>
+<!-- Gráfico hoje + Últimos registros -->
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-white fw-semibold py-2">
+        <i class="bi bi-bar-chart me-1"></i>Movimentos por Produto (Hoje)
+      </div>
+      <div class="card-body">
+        <canvas id="chartProd"></canvas>
+      </div>
+    </div>
   </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-sm table-hover mb-0">
-        <thead>
-          <tr><th>Hora</th><th>Tipo</th><th>Categoria</th><th>Operador</th><th>Produto</th><th>Qtd</th></tr>
-        </thead>
-        <tbody>
-          {% for r in recent %}
-          <tr>
-            <td class="text-muted small">{{ r.recorded_at.strftime('%d/%m %H:%M') if r.recorded_at }}</td>
-            <td>
-              {% if r.movement_type == 'ENTRY' %}<span class="badge badge-entry">Entrada</span>
-              {% else %}<span class="badge badge-exit">Saída</span>{% endif %}
-            </td>
-            <td class="small">{{ r.category_name or '—' }}</td>
-            <td class="small">{{ r.operator_name }}</td>
-            <td class="small">{{ r.product_name }}</td>
-            <td class="small fw-semibold">{{ r.quantity }} {{ r.product_unit }}</td>
-          </tr>
-          {% else %}
-          <tr><td colspan="6" class="text-center text-muted py-3">Nenhum registro</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+        <span class="fw-semibold"><i class="bi bi-clock-history me-1"></i>Últimos Registros</span>
+        <a href="/reports" class="btn btn-sm btn-outline-primary">Ver relatório</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead>
+              <tr><th>Hora</th><th>Tipo</th><th>Categoria</th><th>Operador</th><th>Produto</th><th>Qtd</th></tr>
+            </thead>
+            <tbody>
+              {% for r in recent %}
+              <tr>
+                <td class="text-muted small">{{ r.recorded_at.strftime('%d/%m %H:%M') if r.recorded_at }}</td>
+                <td>
+                  {% if r.movement_type == 'ENTRY' %}<span class="badge badge-entry">Entrada</span>
+                  {% else %}<span class="badge badge-exit">Saída</span>{% endif %}
+                </td>
+                <td class="small">{{ r.category_name or '—' }}</td>
+                <td class="small">{{ r.operator_name }}</td>
+                <td class="small">{{ r.product_name }}</td>
+                <td class="small fw-semibold">{{ r.quantity }} {{ r.product_unit }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="6" class="text-center text-muted py-3">Nenhum registro</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -89,98 +102,95 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 const stockByCategory = {{ stock_by_category | tojson }};
-let activeChart = null;
+const summary = {{ summary | tojson }};
 
+/* ── Gráfico de hoje ─────────────────────────────────── */
+(function () {
+  const labels = [...new Set(summary.map(s => s.product_name))];
+  const entries = labels.map(l => {
+    const s = summary.find(x => x.product_name === l && x.movement_type === 'ENTRY');
+    return s ? s.total_quantity : 0;
+  });
+  const exits = labels.map(l => {
+    const s = summary.find(x => x.product_name === l && x.movement_type === 'EXIT');
+    return s ? s.total_quantity : 0;
+  });
+
+  if (labels.length) {
+    new Chart(document.getElementById('chartProd'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Entrada', data: entries, backgroundColor: '#198754' },
+          { label: 'Saída',   data: exits,   backgroundColor: '#dc3545' },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+  } else {
+    document.getElementById('chartProd').closest('.card-body').innerHTML =
+      '<p class="text-muted text-center pt-4">Sem movimentação hoje.</p>';
+  }
+})();
+
+/* ── Estoque por categoria ───────────────────────────── */
 function showCategories() {
   document.getElementById('backBtn').classList.add('d-none');
   document.getElementById('stockTitle').innerHTML =
-    '<i class="bi bi-bar-chart-steps me-2"></i>Estoque Acumulado por Categoria';
-  renderCategoryView();
+    '<i class="bi bi-layers me-1"></i>Estoque Total por Categoria';
+  renderCategories();
 }
 
-function renderCategoryView() {
+function renderCategories() {
   const section = document.getElementById('stockSection');
 
   if (!stockByCategory.length) {
-    section.innerHTML = '<p class="text-muted text-center py-3">Nenhuma categoria com movimentação.</p>';
+    section.innerHTML = '<p class="text-muted text-center py-2">Nenhuma categoria com movimentação.</p>';
     return;
   }
 
-  const cards = stockByCategory.map((c, i) => `
-    <div class="col-md-3 col-6">
-      <div class="card border bg-white p-3 text-center h-100" style="cursor:pointer;"
-           title="Duplo clique para ver produtos por produto"
-           ondblclick="drilldown(${c.category_id}, ${JSON.stringify(c.category_name)})">
-        <div class="fw-semibold mb-1">${c.category_name}</div>
-        <div class="h4 mb-0 ${c.balance >= 0 ? 'text-success' : 'text-danger'}">${c.balance.toFixed(1)}</div>
-        <div class="text-muted mt-1" style="font-size:.72rem;">
-          <span class="text-success">▲ ${c.total_entry.toFixed(1)}</span>
-          &nbsp;/&nbsp;
-          <span class="text-danger">▼ ${c.total_exit.toFixed(1)}</span>
+  const cols = stockByCategory.map(c => {
+    const balClass = c.balance >= 0 ? 'text-success' : 'text-danger';
+    const borderClass = c.balance >= 0 ? 'border-success' : 'border-danger';
+    return `
+      <div class="col">
+        <div class="card border ${borderClass} text-center py-3 px-2 h-100 cat-card"
+             style="cursor:pointer;" title="Clique para ver por produto"
+             onclick="drilldown(${c.category_id}, ${JSON.stringify(c.category_name)})">
+          <div class="fw-semibold mb-1 small">${c.category_name}</div>
+          <div class="h4 mb-0 ${balClass}">${c.balance.toFixed(1)}</div>
+          <div class="mt-1" style="font-size:.7rem;">
+            <span class="text-success">▲ ${c.total_entry.toFixed(1)}</span>
+            &nbsp;/&nbsp;
+            <span class="text-danger">▼ ${c.total_exit.toFixed(1)}</span>
+          </div>
         </div>
-      </div>
-    </div>
-  `).join('');
+      </div>`;
+  }).join('');
 
   section.innerHTML = `
-    <canvas id="catChart" height="110" class="mb-4"></canvas>
-    <div class="row g-2" id="catCards">${cards}</div>
-  `;
-
-  document.getElementById('dblClickHint').classList.remove('d-none');
-
-  if (activeChart) { activeChart.destroy(); activeChart = null; }
-
-  activeChart = new Chart(document.getElementById('catChart'), {
-    type: 'bar',
-    data: {
-      labels: stockByCategory.map(c => c.category_name),
-      datasets: [
-        {
-          label: 'Entradas',
-          data: stockByCategory.map(c => c.total_entry),
-          backgroundColor: '#198754',
-        },
-        {
-          label: 'Saídas',
-          data: stockByCategory.map(c => c.total_exit),
-          backgroundColor: '#dc3545',
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom' } },
-      scales: { y: { beginAtZero: true } },
-    },
-  });
-
-  document.getElementById('catChart').addEventListener('dblclick', async (evt) => {
-    const elements = activeChart.getElementsAtEventForMode(
-      evt, 'nearest', { intersect: true }, false
-    );
-    if (elements.length > 0) {
-      const idx = elements[0].index;
-      const cat = stockByCategory[idx];
-      await drilldown(cat.category_id, cat.category_name);
-    }
-  });
+    <div class="row row-cols-2 row-cols-md-4 g-2">${cols}</div>
+    <div class="text-muted mt-2" style="font-size:.72rem;">
+      <i class="bi bi-hand-index me-1"></i>Clique em uma categoria para ver o detalhamento por produto.
+    </div>`;
 }
 
 async function drilldown(categoryId, categoryName) {
   document.getElementById('backBtn').classList.remove('d-none');
-  document.getElementById('dblClickHint').classList.add('d-none');
   document.getElementById('stockTitle').innerHTML =
-    `<i class="bi bi-box-seam me-2"></i>${categoryName}`;
-
-  if (activeChart) { activeChart.destroy(); activeChart = null; }
+    `<i class="bi bi-box-seam me-1"></i>${categoryName} — Estoque por Produto`;
 
   const section = document.getElementById('stockSection');
-  section.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-hourglass-split"></i> Carregando...</div>';
+  section.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-hourglass-split"></i> Carregando…</div>';
 
   const res = await fetch(`/api/v1/reports/stock/product?category_id=${categoryId}`);
   if (!res.ok) {
-    section.innerHTML = '<div class="alert alert-danger">Erro ao carregar dados.</div>';
+    section.innerHTML = '<div class="alert alert-danger m-2">Erro ao carregar dados.</div>';
     return;
   }
   const products = await res.json();
@@ -190,26 +200,26 @@ async function drilldown(categoryId, categoryName) {
     return;
   }
 
-  const rows = products.map(p => `
-    <tr>
+  const rows = products.map(p => {
+    const balClass = p.balance >= 0 ? 'text-success' : 'text-danger';
+    return `<tr>
       <td class="fw-semibold">${p.product_name}</td>
       <td class="text-muted small">${p.product_unit}</td>
       <td class="text-success">${p.total_entry.toFixed(2)}</td>
       <td class="text-danger">${p.total_exit.toFixed(2)}</td>
-      <td class="fw-bold ${p.balance >= 0 ? 'text-success' : 'text-danger'}">${p.balance.toFixed(2)}</td>
-    </tr>
-  `).join('');
+      <td class="fw-bold ${balClass}">${p.balance.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
 
   section.innerHTML = `
     <div class="table-responsive">
-      <table class="table table-sm mb-0">
+      <table class="table table-sm table-hover mb-0">
         <thead>
           <tr><th>Produto</th><th>Unidade</th><th>Entradas</th><th>Saídas</th><th>Saldo</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
-    </div>
-  `;
+    </div>`;
 }
 
 showCategories();
