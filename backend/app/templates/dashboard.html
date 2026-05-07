@@ -159,18 +159,28 @@ function renderCategories() {
     return;
   }
 
-  /* Adaptive sizing: fewer items → larger cards; more items → smaller cards */
-  const minCardPx = count <= 3 ? 160 : count <= 6 ? 130 : count <= 10 ? 105 : 85;
-  const fontSize  = count <= 6 ? '.82rem' : count <= 10 ? '.75rem' : '.68rem';
-  const numSize   = count <= 6 ? '1.25rem' : count <= 10 ? '1rem'  : '.88rem';
-  const py        = count <= 8 ? 'py-2' : 'py-1';
+  /* Target columns per row: 1 row for ≤6; 2 rows for 7-12; 3 rows for 13+ */
+  const cols = count <= 6  ? count
+             : count <= 12 ? Math.ceil(count / 2)
+             : Math.ceil(count / 3);
 
-  const cols = stockByCategory.map(c => {
+  const gapRem = 0.4;
+  /* basis slightly under 1/cols so exactly `cols` items fit per row.
+     flex:1 then grows every row (including the last) to fill 100% width — no empty space. */
+  const pct       = (100 / cols).toFixed(4);
+  const gapOffset = ((gapRem * (cols - 1)) / cols).toFixed(4);
+  const basis     = `calc(${pct}% - ${gapOffset}rem)`;
+
+  const fontSize = cols <= 4 ? '.82rem' : cols <= 6 ? '.75rem' : '.68rem';
+  const numSize  = cols <= 4 ? '1.2rem' : cols <= 6 ? '1rem'  : '.85rem';
+  const py       = cols <= 5 ? 'py-2'  : 'py-1';
+
+  const cards = stockByCategory.map(c => {
     const balClass    = c.balance >= 0 ? 'text-success' : 'text-danger';
     const borderClass = c.balance >= 0 ? 'border-success' : 'border-danger';
-    const name        = escHtml(c.category_name);
+    const name = escHtml(c.category_name);
     return `
-      <div class="cat-col" style="min-width:0;">
+      <div style="flex:1 1 ${basis};min-width:0;">
         <div class="card border ${borderClass} text-center ${py} px-1 h-100 cat-card"
              data-cat-id="${c.category_id}"
              data-cat-name="${c.category_name}"
@@ -187,7 +197,7 @@ function renderCategories() {
   }).join('');
 
   section.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(${minCardPx}px,1fr));gap:.4rem;">${cols}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:${gapRem}rem;">${cards}</div>
     <div class="text-muted mt-2" style="font-size:.68rem;">
       <i class="bi bi-hand-index me-1"></i>Clique em uma categoria para ver o detalhamento por produto.
     </div>`;
