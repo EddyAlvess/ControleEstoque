@@ -1,8 +1,20 @@
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import case, func, select
+
+_SP = ZoneInfo("America/Sao_Paulo")
+
+
+def _to_sp(dt: datetime | None) -> datetime | None:
+    """Converte datetime para horário de Brasília."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(_SP)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.category import Category
@@ -77,8 +89,8 @@ async def get_movements_query(
             "shift": mv.shift,
             "device_id": mv.device_id,
             "notes": mv.notes,
-            "recorded_at": mv.recorded_at,
-            "created_at": mv.created_at,
+            "recorded_at": _to_sp(mv.recorded_at),
+            "created_at": _to_sp(mv.created_at),
         })
     return results, total
 

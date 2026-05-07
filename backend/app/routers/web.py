@@ -1,5 +1,8 @@
 from datetime import datetime
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
+
+_SP = ZoneInfo("America/Sao_Paulo")
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -47,7 +50,8 @@ async def dashboard(
     db: AsyncSession = Depends(get_db),
     user: WebUser = Depends(require_user),
 ):
-    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    now_sp = datetime.now(_SP)
+    today_start = now_sp.replace(hour=0, minute=0, second=0, microsecond=0)
 
     total_entry = (await db.execute(
         select(func.coalesce(func.sum(InventoryMovement.quantity), 0))
@@ -74,7 +78,7 @@ async def dashboard(
             recent=recent_rows,
             summary=[s.model_dump() for s in summary],
             stock_by_category=stock_by_category,
-            now=datetime.now().strftime("%d/%m/%Y"),
+            now=now_sp.strftime("%d/%m/%Y"),
         ),
     )
 

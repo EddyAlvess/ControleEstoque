@@ -1,6 +1,5 @@
-from datetime import datetime
-
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -17,9 +16,13 @@ from app.services import report_service
 router = APIRouter(prefix="/api/v1/movements", tags=["movements"])
 
 
+_SP = ZoneInfo("America/Sao_Paulo")
+
+
 async def _detect_shift(db: AsyncSession, recorded_at: datetime) -> str | None:
-    """Detecta o turno com base no horário de recorded_at e nos turnos configurados."""
-    hour = recorded_at.hour
+    """Detecta o turno com base no horário (horário de Brasília) de recorded_at."""
+    dt_sp = recorded_at.astimezone(_SP) if recorded_at.tzinfo else recorded_at.replace(tzinfo=timezone.utc).astimezone(_SP)
+    hour = dt_sp.hour
     result = await db.execute(select(Shift).where(Shift.is_active == True))
     for shift in result.scalars().all():
         if shift.contains_hour(hour):

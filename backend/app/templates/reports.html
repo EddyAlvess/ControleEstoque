@@ -77,10 +77,13 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-sm-2 d-flex align-items-end">
-          <button type="submit" class="btn btn-primary btn-sm w-100">
+        <div class="col-sm-2 d-flex align-items-end gap-1">
+          <button type="submit" class="btn btn-primary btn-sm flex-fill">
             <i class="bi bi-funnel me-1"></i>Filtrar
           </button>
+          <a href="/reports" class="btn btn-outline-secondary btn-sm" title="Limpar filtros">
+            <i class="bi bi-x-lg"></i>
+          </a>
         </div>
       </div>
     </form>
