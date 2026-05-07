@@ -55,6 +55,15 @@ docker compose logs -f postgres
 docker compose build backend
 ```
 
+### ESP32 simulator (Docker)
+```powershell
+# Start simulator alongside the stack
+docker compose --profile sim up
+
+# Simulator only
+docker compose --profile sim up esp32-sim
+```
+
 ### ESP32 firmware
 ```bash
 # Requires PlatformIO CLI or VS Code PlatformIO extension
@@ -76,14 +85,23 @@ Two authentication paths coexist:
 
 Routes are split into two categories in `routers/`:
 - `web.py` — returns `TemplateResponse` (Jinja2 HTML pages, one function per page)
-- All others (`movements.py`, `operators.py`, etc.) — return JSON for the REST API under `/api/v1/`
+- All others (`movements.py`, `operators.py`, `categories.py`, etc.) — return JSON for the REST API under `/api/v1/`
 
 `report_service.py` handles all complex multi-join queries. Adding new report filters: modify `get_movements_query()` there, not in the router.
 
 ### Database schema key decisions
 - `inventory_movements` has two timestamps: `recorded_at` (from ESP32 device clock, NTP-synced) and `created_at` (server receipt). Always use `recorded_at` for business logic.
 - `operators.badge_code` is the identifier typed/scanned on the ESP32 — it is NOT the primary key.
-- Shift (`MORNING`/`AFTERNOON`/`NIGHT`) is sent by the ESP32, derived from its local time in `api_client.cpp:currentShift()`.
+- Shifts are stored in the `shifts` table (dynamic, not hardcoded). When a movement is recorded the server auto-detects shift by hour via `_detect_shift()` in `routers/movements.py`. Shift `name` is the stored identifier; `label` is the display label.
+- Products belong to one `Category` (nullable FK). Categories are managed via `/admin/categories`.
+
+### Template safety rule
+**Never pass user-entered strings directly into onclick attributes.** All admin templates (products, categories, shifts) embed their data as `const DATA = {{ items | tojson }};` in a script block and pass only integer IDs to onclick handlers (e.g. `onclick="openEdit({{ item.id }})"`). This avoids HTML attribute breakage when names contain quotes or special characters.
+
+Routes that render admin templates must convert SQLAlchemy ORM objects to plain dicts before passing them to Jinja2 if the template uses `| tojson`.
+
+### Report filter forms
+Report filter forms intercept `submit` with JavaScript to strip empty-string values before building the query string. This prevents FastAPI from receiving `""` for `int | None` query parameters (which raises a 422 parse error). See `filterForm` submit handler in `templates/reports.html`.
 
 ### ESP32 Firmware (`esp32/src/`)
 
@@ -92,6 +110,8 @@ The firmware is a finite state machine in `menu.cpp`. All state transitions are 
 Key flow: `main.cpp:setup()` connects WiFi → OTA check → loads operators/products from API → `menu.begin()`. The `loop()` calls `ArduinoOTA.handle()` first, then reads keypad or scanner and delegates to `menu.handleKey()` / `menu.handleScanner()`.
 
 Scanner support is compile-time gated: uncomment `#define SCANNER_ENABLED` in `config.h`. When enabled, `scanner.available()` is checked before `keypad.read()` in `loop()`.
+
+The simulator (`esp32-sim/simulator.py`) mirrors the ESP32 state machine in Python using `curses`. It uses a 20×4 LCD display simulation and fetches operators, products and shifts dynamically from the API.
 
 ### Configuration
 
@@ -109,7 +129,36 @@ The `docker-compose.override.yml` activates automatically in dev: mounts the ful
 | Auth logic (JWT, bcrypt) | `backend/app/services/auth_service.py` |
 | Dependency injection (auth guards) | `backend/app/dependencies.py` |
 | HTML templates | `backend/app/templates/` |
-| Alembic migration | `backend/alembic/versions/001_initial_schema.py` |
+| Alembic migrations | `backend/alembic/versions/` |
 | ESP32 state machine | `esp32/src/menu.cpp` |
 | ESP32 HTTP client | `esp32/src/api_client.cpp` |
 | ESP32 credentials/pins | `esp32/src/config.h` |
+| ESP32 Python simulator | `esp32-sim/simulator.py` |
+
+## Web Portal Pages
+
+| URL | Description | Auth |
+|-----|-------------|------|
+| `/dashboard` | KPIs do dia + estoque por categoria (drilldown) + últimos registros | user |
+| `/reports` | Filtros avançados + paginação + export CSV | user |
+| `/admin/operators` | CRUD operadores | admin |
+| `/admin/products` | CRUD produtos com categoria | admin |
+| `/admin/categories` | CRUD categorias | admin |
+| `/admin/users` | CRUD usuários web | admin |
+| `/admin/shifts` | CRUD turnos (detecção automática por hora) | admin |
+
+## REST API Summary
+
+| Prefix | Description |
+|--------|-------------|
+| `/api/v1/auth` | Login/logout |
+| `/api/v1/movements` | Registrar entradas/saídas (ESP32 + web) |
+| `/api/v1/operators` | Listagem e CRUD (ESP32 usa GET) |
+| `/api/v1/products` | Listagem e CRUD (ESP32 usa GET) |
+| `/api/v1/categories` | Listagem e CRUD |
+| `/api/v1/shifts` | Listagem e CRUD |
+| `/api/v1/reports/summary` | Totais agrupados por produto |
+| `/api/v1/reports/stock/category` | Saldo acumulado por categoria |
+| `/api/v1/reports/stock/product` | Saldo acumulado por produto (requer `category_id`) |
+| `/api/v1/reports/export` | Download CSV com filtros |
+| `/api/v1/ota` | OTA firmware update (ESP32) |
