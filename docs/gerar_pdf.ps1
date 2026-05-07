@@ -1,17 +1,21 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    SorvPel — Gera o manual em PDF a partir do HTML.
+    SorvPel — Gera os manuais em PDF a partir do HTML.
 .DESCRIPTION
-    Usa Microsoft Edge (headless) para converter SorvPel_Manual.html em PDF.
+    Usa Microsoft Edge (headless) para converter os manuais HTML em PDF.
+    Gera: SorvPel_Manual.pdf e SorvPel_Manual_Operacional.pdf
     Execute a partir da raiz do projeto ou da pasta docs/.
 #>
 
 $ErrorActionPreference = "Stop"
 
-$DOCS_DIR  = $PSScriptRoot
-$HTML_FILE = Join-Path $DOCS_DIR "SorvPel_Manual.html"
-$PDF_FILE  = Join-Path $DOCS_DIR "SorvPel_Manual.pdf"
+$DOCS_DIR = $PSScriptRoot
+
+$FILES = @(
+    @{ Html = "SorvPel_Manual.html";            Pdf = "SorvPel_Manual.pdf" },
+    @{ Html = "SorvPel_Manual_Operacional.html"; Pdf = "SorvPel_Manual_Operacional.pdf" }
+)
 
 function Write-Info($msg)  { Write-Host "► $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)    { Write-Host "✔ $msg" -ForegroundColor Green }
@@ -33,38 +37,46 @@ if (-not $edgeExe) {
 
 if (-not $edgeExe) {
     Write-Err "Microsoft Edge nao encontrado."
-    Write-Host "  Abra manualmente docs\SorvPel_Manual.html no Edge/Chrome e use"
-    Write-Host "  Ctrl+P > Salvar como PDF."
+    Write-Host "  Abra manualmente os arquivos HTML no Edge/Chrome e use Ctrl+P > Salvar como PDF."
     exit 1
 }
 
-if (-not (Test-Path $HTML_FILE)) {
-    Write-Err "Arquivo nao encontrado: $HTML_FILE"
-    exit 1
+$ok = 0; $fail = 0
+foreach ($f in $FILES) {
+    $htmlPath = Join-Path $DOCS_DIR $f.Html
+    $pdfPath  = Join-Path $DOCS_DIR $f.Pdf
+
+    if (-not (Test-Path $htmlPath)) {
+        Write-Err "Nao encontrado: $htmlPath"
+        $fail++; continue
+    }
+
+    Write-Info "Gerando $($f.Pdf)..."
+    $fileUri = "file:///" + ($htmlPath -replace "\\", "/")
+
+    & $edgeExe `
+        --headless `
+        --disable-gpu `
+        --run-all-compositor-stages-before-draw `
+        --print-to-pdf="$pdfPath" `
+        --print-to-pdf-no-header `
+        --no-pdf-header-footer `
+        "$fileUri" 2>$null
+
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $pdfPath)) {
+        $size = [math]::Round((Get-Item $pdfPath).Length / 1KB, 1)
+        Write-Ok "  Gerado: $pdfPath ($size KB)"
+        $ok++
+    } else {
+        Write-Err "  Falha ao gerar: $($f.Pdf)"
+        $fail++
+    }
 }
 
-Write-Info "Gerando PDF com Microsoft Edge..."
-Write-Info "  Fonte : $HTML_FILE"
-Write-Info "  Saida : $PDF_FILE"
-
-$fileUri = "file:///" + ($HTML_FILE -replace "\\", "/")
-
-& $edgeExe `
-    --headless `
-    --disable-gpu `
-    --run-all-compositor-stages-before-draw `
-    --print-to-pdf="$PDF_FILE" `
-    --print-to-pdf-no-header `
-    --no-pdf-header-footer `
-    "$fileUri" 2>$null
-
-if ($LASTEXITCODE -eq 0 -and (Test-Path $PDF_FILE)) {
-    $size = [math]::Round((Get-Item $PDF_FILE).Length / 1KB, 1)
-    Write-Ok "PDF gerado: $PDF_FILE ($size KB)"
+Write-Host ""
+if ($fail -eq 0) {
+    Write-Ok "Todos os PDFs gerados com sucesso em: $DOCS_DIR"
 } else {
-    Write-Err "Falha ao gerar PDF. Tente manualmente:"
-    Write-Host "  1. Abra $HTML_FILE no Edge ou Chrome"
-    Write-Host "  2. Ctrl+P > Impressora: 'Salvar como PDF'"
-    Write-Host "  3. Clique em Salvar"
+    Write-Err "$fail arquivo(s) com falha. Gere manualmente: abra o HTML no Edge/Chrome e use Ctrl+P > Salvar como PDF."
     exit 1
 }

@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SorvPel — Manual Operacional</title>
+<style>
+/* ── Reset & base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#e94560;--sidebar:#1a1a2e;--sidebar-active:#0f3460;--sidebar-border:#2d2d4e;
+  --success:#198754;--danger:#dc3545;--warning:#ffc107;--info:#0dcaf0;--secondary:#6c757d;
+  --primary:#0d6efd;--body-bg:#f8f9fa;--card-shadow:0 1px 4px rgba(0,0,0,.1);
+  --accent-blue:#0f3460;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#212529;font-size:15px;line-height:1.6}
+a{color:var(--primary);text-decoration:none}
+code{font-family:'Consolas','Courier New',monospace;background:#f1f3f5;padding:1px 5px;border-radius:3px;font-size:.88em;color:#c0392b}
+h1{font-size:1.9rem;font-weight:800}
+h2{font-size:1.4rem;font-weight:700;color:#1a1a2e;border-bottom:2px solid var(--brand);padding-bottom:.4rem;margin-bottom:1.2rem}
+h3{font-size:1.1rem;font-weight:700;color:#1a1a2e;margin-bottom:.7rem}
+h4{font-size:.95rem;font-weight:600;color:#495057;margin-bottom:.5rem}
+p{margin-bottom:.8rem}
+ul,ol{padding-left:1.4rem;margin-bottom:.8rem}
+li{margin-bottom:.25rem}
+
+/* ── Layout ── */
+.page{max-width:1100px;margin:0 auto;padding:2rem 1.5rem}
+.cover{background:var(--sidebar);color:#fff;padding:3.5rem 2rem;text-align:center;border-radius:12px;margin-bottom:3rem}
+.cover h1{color:#fff;margin-bottom:.4rem}
+.cover .sub{color:#adb5bd;font-size:1.05rem}
+.cover .badge-cover{display:inline-block;background:var(--brand);color:#fff;padding:.25rem .9rem;border-radius:999px;font-size:.85rem;margin-top:.8rem}
+
+/* ── TOC ── */
+.toc{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:1.2rem 1.5rem;margin-bottom:2.5rem}
+.toc h3{font-size:1rem;margin-bottom:.7rem}
+.toc ol{margin:0}
+.toc li{margin-bottom:.15rem;font-size:.9rem}
+.toc a{color:#495057}
+.toc a:hover{color:var(--brand)}
+
+/* ── Section ── */
+.section{margin-bottom:3rem}
+
+/* ── Callout boxes ── */
+.note,.tip,.warn{border-left:4px solid;padding:.65rem 1rem;border-radius:0 6px 6px 0;margin-bottom:1rem;font-size:.88rem}
+.note{border-color:var(--info);background:#e8f7fb}
+.tip{border-color:var(--success);background:#e8f5ec}
+.warn{border-color:var(--warning);background:#fff8e1}
+
+/* ── Keyboard key ── */
+kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bottom:2px solid #6c757d;border-radius:4px;padding:1px 6px;font-size:.8rem;font-family:monospace;color:#212529}
+
+/* ── Screen mockups: WEB ── */
+.mock-container{background:#f0f2f5;border:1px solid #dee2e6;border-radius:10px;overflow:hidden;margin:1.2rem 0 1.6rem;box-shadow:0 2px 12px rgba(0,0,0,.1)}
+.mock-bar{background:#fff;border-bottom:1px solid #dee2e6;padding:.35rem .7rem;display:flex;align-items:center;gap:.4rem}
+.mock-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.d-red{background:#ff5f57}.d-yel{background:#febc2e}.d-grn{background:#28c840}
+.mock-url{background:#f1f3f5;border-radius:4px;padding:.15rem .6rem;font-size:.75rem;color:#6c757d;flex:1;text-align:center;max-width:360px;margin:0 auto}
+.mock-wrap{display:flex;min-height:420px}
+
+/* Sidebar */
+.mock-sidebar{width:180px;background:var(--sidebar);flex-shrink:0;display:flex;flex-direction:column;font-size:.78rem}
+.mock-brand{display:flex;align-items:center;padding:.55rem .5rem .55rem .85rem;border-bottom:1px solid var(--sidebar-border)}
+.mock-brand-text{color:var(--brand);font-weight:700;font-size:.92rem;flex:1}
+.mock-nav-link{color:#adb5bd;padding:.38rem .55rem;border-radius:5px;margin:1px 5px;display:flex;align-items:center;gap:.4rem;cursor:default}
+.mock-nav-link.active{background:var(--sidebar-active);color:#fff}
+.mock-nav-link i{width:16px;text-align:center;font-size:.85rem;flex-shrink:0}
+.mock-section-label{font-size:.6rem;color:#6c757d;text-transform:uppercase;letter-spacing:.1em;padding:.35rem .85rem .1rem}
+.mock-divider{border:none;border-top:1px solid var(--sidebar-border);margin:.2rem .5rem}
+.mock-sidebar-footer{border-top:1px solid var(--sidebar-border);padding:.45rem .55rem;margin-top:auto}
+.mock-user-name{font-size:.7rem;color:#adb5bd}
+.mock-role-badge{display:inline-block;background:var(--warning);color:#212529;border-radius:3px;padding:0 4px;font-size:.65rem;font-weight:700}
+.mock-logout-btn{display:flex;align-items:center;justify-content:center;gap:.3rem;color:#dc3545;border:1px solid #dc3545;border-radius:4px;padding:.2rem;font-size:.7rem;margin-top:.3rem;cursor:default}
+
+/* Main content area */
+.mock-main{flex:1;background:var(--body-bg);padding:1rem;overflow:hidden}
+.mock-page-header{border-bottom:1px solid #dee2e6;margin-bottom:.8rem;padding-bottom:.5rem;display:flex;justify-content:space-between;align-items:center}
+.mock-page-header h5{font-size:.82rem;font-weight:700;margin:0}
+
+/* Cards */
+.mock-card{background:#fff;border-radius:6px;box-shadow:var(--card-shadow);margin-bottom:.7rem}
+.mock-card-header{padding:.4rem .7rem;border-bottom:1px solid #f0f2f5;font-size:.75rem;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.mock-card-body{padding:.6rem .7rem}
+
+/* Buttons (mock) */
+.mock-btn{display:inline-flex;align-items:center;gap:.25rem;padding:.18rem .55rem;border-radius:4px;font-size:.72rem;cursor:default;border:1px solid transparent;font-weight:500}
+.mock-btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.mock-btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.mock-btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.mock-btn-outline-primary{background:transparent;color:var(--primary);border-color:var(--primary)}
+.mock-btn-outline-danger{background:transparent;color:var(--danger);border-color:var(--danger)}
+.mock-btn-outline-warning{background:transparent;color:#856404;border-color:var(--warning)}
+.mock-btn-outline-secondary{background:transparent;color:#6c757d;border-color:#6c757d}
+
+/* Badges */
+.mock-badge{display:inline-block;padding:.15rem .45rem;border-radius:3px;font-size:.68rem;font-weight:600}
+.bg-success{background:var(--success)!important;color:#fff}
+.bg-danger{background:var(--danger)!important;color:#fff}
+.bg-warning{background:var(--warning)!important;color:#212529}
+.bg-secondary{background:var(--secondary)!important;color:#fff}
+.bg-info{background:var(--info)!important;color:#212529}
+.text-success{color:var(--success)!important}
+.text-danger{color:var(--danger)!important}
+.text-primary{color:var(--primary)!important}
+.text-muted{color:#6c757d!important}
+
+/* Tables */
+.mock-table{width:100%;border-collapse:collapse;font-size:.73rem}
+.mock-table th{background:#f8f9fa;color:#6c757d;font-size:.65rem;text-transform:uppercase;letter-spacing:.04em;padding:.35rem .5rem;border-bottom:2px solid #dee2e6;text-align:left}
+.mock-table td{padding:.3rem .5rem;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+.mock-table tr:last-child td{border-bottom:none}
+.mock-table tr:hover td{background:#f8f9fa}
+.fw-semibold{font-weight:600}
+
+/* Stat cards */
+.mock-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.6rem}
+.mock-stat-card{background:#fff;border-radius:6px;box-shadow:var(--card-shadow);padding:.6rem .5rem;text-align:center}
+.mock-stat-num{font-size:1.5rem;font-weight:800;line-height:1}
+.mock-stat-label{font-size:.62rem;color:#6c757d;margin-top:.1rem}
+
+/* Category cards */
+.mock-cat-row{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.4rem}
+.mock-cat-card{flex:1;border-radius:5px;border:1px solid;padding:.35rem .3rem;text-align:center;min-width:55px;cursor:default}
+.mock-cat-name{font-size:.62rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mock-cat-num{font-size:.85rem;font-weight:800;line-height:1.2}
+.mock-cat-sub{font-size:.55rem}
+
+/* Form controls (mock) */
+.mock-form-group{margin-bottom:.5rem}
+.mock-label{font-size:.7rem;font-weight:600;color:#495057;display:block;margin-bottom:.15rem}
+.mock-input{width:100%;padding:.2rem .4rem;border:1px solid #ced4da;border-radius:4px;font-size:.72rem;background:#fff;color:#212529}
+.mock-input.pw{color:transparent;text-shadow:0 0 6px #555;letter-spacing:2px}
+.mock-select{width:100%;padding:.2rem .4rem;border:1px solid #ced4da;border-radius:4px;font-size:.72rem;background:#fff}
+.mock-form-text{font-size:.62rem;color:#6c757d;margin-top:.1rem}
+.mock-form-check{display:flex;align-items:center;gap:.35rem;font-size:.72rem}
+.mock-check-input{width:14px;height:14px}
+
+/* Filter row */
+.mock-filter-row{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:.35rem;align-items:end}
+
+/* Bar chart (CSS only) */
+.mock-chart{display:flex;align-items:flex-end;gap:.3rem;height:80px;padding-top:.5rem}
+.mock-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;gap:.15rem}
+.mock-bar-pair{display:flex;gap:1px;align-items:flex-end;width:100%}
+.mock-bar-in{background:var(--success);border-radius:2px 2px 0 0;flex:1}
+.mock-bar-out{background:var(--danger);border-radius:2px 2px 0 0;flex:1}
+.mock-bar-label{font-size:.52rem;color:#6c757d;text-align:center}
+.mock-chart-legend{display:flex;gap:.6rem;font-size:.6rem;margin-top:.2rem}
+.mock-legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:2px}
+
+/* Modal overlay */
+.mock-modal-overlay{position:relative;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.45);padding:1.2rem;border-radius:0 0 10px 10px;margin-top:-1px}
+.mock-modal{background:#fff;border-radius:8px;width:340px;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.mock-modal-header{padding:.55rem .85rem;border-bottom:1px solid #dee2e6;display:flex;justify-content:space-between;align-items:center}
+.mock-modal-header h5{font-size:.82rem;font-weight:700;margin:0}
+.mock-modal-close{font-size:1rem;color:#6c757d;cursor:default;line-height:1}
+.mock-modal-body{padding:.75rem .85rem}
+.mock-modal-footer{padding:.45rem .85rem;border-top:1px solid #dee2e6;display:flex;justify-content:flex-end;gap:.4rem}
+
+/* Pagination */
+.mock-pagination{display:flex;gap:.2rem;justify-content:center;flex-wrap:wrap;padding:.4rem}
+.mock-page-item{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid #dee2e6;border-radius:4px;font-size:.72rem;cursor:default;color:#0d6efd}
+.mock-page-item.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.mock-page-item.disabled{color:#adb5bd}
+
+/* Alert mockup */
+.mock-alert{border-left:4px solid;border-radius:0 4px 4px 0;padding:.45rem .7rem;font-size:.72rem;margin-bottom:.5rem}
+.mock-alert-info{border-color:var(--info);background:#e8f7fb}
+.mock-alert-success{border-color:var(--success);background:#e8f5ec}
+
+/* ── LCD / ESP32 mockup ── */
+.esp-section{display:flex;flex-wrap:wrap;gap:1.5rem;margin:1.2rem 0 1.8rem;align-items:flex-start}
+.esp-screen-wrap{text-align:center}
+.esp-label{font-size:.75rem;color:#6c757d;margin-bottom:.4rem;font-weight:600}
+.esp-lcd{background:#1a1a00;border:3px solid #444;border-radius:6px;padding:8px 10px;font-family:'Courier New',monospace;display:inline-block;box-shadow:0 0 12px rgba(0,180,0,.25)}
+.esp-lcd-line{color:#00e000;font-size:.78rem;letter-spacing:.06em;height:1.35em;display:flex;align-items:center;white-space:pre;min-width:20ch}
+.esp-lcd-line .cursor{background:#00e000;width:8px;display:inline-block;animation:blink 1s step-end infinite}
+.esp-lcd-dim{color:#007800}
+.esp-lcd-line.inv{background:#00e000;color:#1a1a00;padding:0 1px;border-radius:1px}
+.esp-keypad{background:#333;border-radius:8px;padding:.6rem;display:inline-grid;grid-template-columns:repeat(3,1fr);gap:.3rem;margin-top:.6rem}
+.esp-key{background:#555;color:#ddd;border-radius:4px;width:32px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-family:monospace;cursor:default;box-shadow:0 2px #222}
+.esp-key.special{background:#0f3460;color:#7eb8ff}
+.esp-key.red{background:#7a1a1a;color:#ffaaaa}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── Flow diagram ── */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin:1rem 0}
+.flow-step{background:var(--sidebar);color:#fff;border-radius:6px;padding:.35rem .7rem;font-size:.78rem;font-weight:600}
+.flow-arrow{color:#adb5bd;font-size:1.1rem}
+
+/* ── Print ── */
+@media print{
+  .mock-container{page-break-inside:avoid;break-inside:avoid}
+  .esp-section{page-break-inside:avoid;break-inside:avoid}
+  .section{page-break-inside:avoid;break-inside:avoid}
+  h2{page-break-before:always;break-before:always}
+  h2:first-of-type{page-break-before:avoid;break-before:avoid}
+  .toc{page-break-after:always;break-after:always}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- CAPA -->
+<div class="cover">
+  <div style="font-size:2.5rem;margin-bottom:.5rem">🍨</div>
+  <h1>SorvPel — Controle de Estoque</h1>
+  <div class="sub">Manual Operacional</div>
+  <div class="badge-cover">Versão 1.0 · Maio 2026</div>
+  <div style="margin-top:1.5rem;font-size:.82rem;color:#8892a4">
+    Portal Web (Dashboard, Relatórios, Administração) &nbsp;·&nbsp; Terminal ESP32
+  </div>
+</div>
+
+<!-- ÍNDICE -->
+<nav class="toc">
+  <h3>📋 Sumário</h3>
+  <ol>
+    <li><a href="#s-login">Login no Portal Web</a></li>
+    <li><a href="#s-dashboard">Dashboard — Visão Geral</a></li>
+    <li><a href="#s-reports">Relatórios</a></li>
+    <li><a href="#s-operators">Administração › Operadores</a></li>
+    <li><a href="#s-products">Administração › Produtos</a></li>
+    <li><a href="#s-categories">Administração › Categorias</a></li>
+    <li><a href="#s-users">Administração › Usuários Web</a></li>
+    <li><a href="#s-shifts">Administração › Turnos</a></li>
+    <li><a href="#s-password">Alterar Senha</a></li>
+    <li><a href="#s-esp32">Terminal ESP32 — Fluxo de Operação</a></li>
+    <li><a href="#s-esp32-screens">Terminal ESP32 — Telas do Display</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 1. LOGIN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-login">
+  <h2>1. Login no Portal Web</h2>
+  <p>Acesse o endereço do servidor no navegador (padrão: <code>http://&lt;IP&gt;:8080</code>). A tela de login é exibida para todos que ainda não estão autenticados.</p>
+
+  <!-- Mockup Login -->
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/login</div>
+    </div>
+    <div style="background:var(--sidebar);min-height:380px;display:flex;align-items:center;justify-content:center;padding:2rem">
+      <div style="background:#fff;border-radius:10px;width:300px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.3)">
+        <div style="background:var(--sidebar);padding:1.2rem;text-align:center">
+          <div style="font-size:2rem">🍨</div>
+          <div style="color:var(--brand);font-weight:800;font-size:1.1rem;margin-top:.3rem">SorvPel</div>
+          <div style="color:#adb5bd;font-size:.75rem">Controle de Estoque</div>
+        </div>
+        <div style="padding:1.2rem">
+          <div class="mock-form-group">
+            <label class="mock-label">Usuário</label>
+            <input class="mock-input" value="admin" readonly>
+          </div>
+          <div class="mock-form-group">
+            <label class="mock-label">Senha</label>
+            <input class="mock-input pw" value="••••••••" readonly>
+          </div>
+          <div class="mock-btn mock-btn-primary" style="width:100%;justify-content:center;margin-top:.5rem;padding:.35rem">
+            Entrar
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Campos</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Campo</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Descrição</th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Usuário</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Login cadastrado pelo administrador (padrão inicial: <code>admin</code>)</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Senha</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Senha definida na instalação (padrão: <code>admin123</code>)</td></tr>
+  </table>
+  <div class="warn">⚠️ Troque a senha padrão logo após o primeiro acesso em <strong>Menu → ícone de chave</strong>.</div>
+  <div class="note">ℹ️ Em caso de usuário/senha incorretos, o sistema exibe a mensagem <em>"Usuário ou senha incorretos. Tente novamente."</em> na mesma tela.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 2. DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-dashboard">
+  <h2>2. Dashboard — Visão Geral</h2>
+  <p>Página inicial após o login. Exibe um resumo do dia atual: entradas, saídas, saldo líquido, estoque por categoria com drilldown por produto, gráfico de movimentos e os últimos registros.</p>
+
+  <!-- Mockup Dashboard -->
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/dashboard</div>
+    </div>
+    <div class="mock-wrap">
+      <!-- Sidebar -->
+      <nav class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span><span style="color:#adb5bd;font-size:.7rem">‹</span></div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link active"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📊</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem" title="Alterar senha">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
+        </div>
+      </nav>
+      <!-- Main -->
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <h5>⚡ Dashboard</h5>
+          <span class="text-muted" style="font-size:.68rem">Hoje: 07/05/2026 14:32</span>
+        </div>
+        <!-- KPIs -->
+        <div class="mock-stat-row">
+          <div class="mock-stat-card">
+            <div style="color:var(--success);font-size:1.1rem">▼</div>
+            <div class="mock-stat-num text-success">142,0</div>
+            <div class="mock-stat-label">Entradas Hoje</div>
+          </div>
+          <div class="mock-stat-card">
+            <div style="color:var(--danger);font-size:1.1rem">▲</div>
+            <div class="mock-stat-num text-danger">88,5</div>
+            <div class="mock-stat-label">Saídas Hoje</div>
+          </div>
+          <div class="mock-stat-card">
+            <div style="color:var(--primary);font-size:1.1rem">⧖</div>
+            <div class="mock-stat-num text-primary">53,5</div>
+            <div class="mock-stat-label">Saldo Líquido Hoje</div>
+          </div>
+        </div>
+        <!-- Estoque categorias -->
+        <div class="mock-card">
+          <div class="mock-card-header">📦 Estoque Total por Categoria</div>
+          <div class="mock-card-body">
+            <div class="mock-cat-row">
+              <div class="mock-cat-card" style="border-color:var(--success);color:var(--success)">
+                <div class="mock-cat-name">Sorvete</div>
+                <div class="mock-cat-num">320,0</div>
+                <div class="mock-cat-sub"><span style="color:var(--success)">▲180</span> <span style="color:var(--danger)">▼60</span></div>
+              </div>
+              <div class="mock-cat-card" style="border-color:var(--success);color:var(--success)">
+                <div class="mock-cat-name">Açaí</div>
+                <div class="mock-cat-num">210,5</div>
+                <div class="mock-cat-sub"><span style="color:var(--success)">▲130</span> <span style="color:var(--danger)">▼40</span></div>
+              </div>
+              <div class="mock-cat-card" style="border-color:var(--danger);color:var(--danger)">
+                <div class="mock-cat-name">Embalagem</div>
+                <div class="mock-cat-num">-12,0</div>
+                <div class="mock-cat-sub"><span style="color:var(--success)">▲20</span> <span style="color:var(--danger)">▼32</span></div>
+              </div>
+              <div class="mock-cat-card" style="border-color:var(--success);color:var(--success)">
+                <div class="mock-cat-name">Polpa</div>
+                <div class="mock-cat-num">98,0</div>
+                <div class="mock-cat-sub"><span style="color:var(--success)">▲60</span> <span style="color:var(--danger)">▼25</span></div>
+              </div>
+            </div>
+            <div style="font-size:.62rem;color:#6c757d">👆 Clique em uma categoria para ver o detalhamento por produto.</div>
+          </div>
+        </div>
+        <!-- Gráfico + Últimos -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <div class="mock-card">
+            <div class="mock-card-header">📈 Movimentos por Produto (Hoje)</div>
+            <div class="mock-card-body">
+              <div class="mock-chart">
+                <div class="mock-bar-wrap">
+                  <div class="mock-bar-pair"><div class="mock-bar-in" style="height:60px"></div><div class="mock-bar-out" style="height:25px"></div></div>
+                  <div class="mock-bar-label">Morango 1L</div>
+                </div>
+                <div class="mock-bar-wrap">
+                  <div class="mock-bar-pair"><div class="mock-bar-in" style="height:45px"></div><div class="mock-bar-out" style="height:35px"></div></div>
+                  <div class="mock-bar-label">Açaí 500ml</div>
+                </div>
+                <div class="mock-bar-wrap">
+                  <div class="mock-bar-pair"><div class="mock-bar-in" style="height:30px"></div><div class="mock-bar-out" style="height:18px"></div></div>
+                  <div class="mock-bar-label">Creme 2L</div>
+                </div>
+              </div>
+              <div class="mock-chart-legend">
+                <span><span class="mock-legend-dot" style="background:var(--success)"></span>Entrada</span>
+                <span><span class="mock-legend-dot" style="background:var(--danger)"></span>Saída</span>
+              </div>
+            </div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-header">🕐 Últimos Registros <a href="#" style="font-size:.65rem">Ver relatório</a></div>
+            <div class="mock-card-body" style="padding:0">
+              <table class="mock-table">
+                <thead><tr><th>Hora</th><th>Tipo</th><th>Operador</th><th>Produto</th><th>Qtd</th></tr></thead>
+                <tbody>
+                  <tr><td class="text-muted">14:28</td><td><span class="mock-badge bg-success">Entrada</span></td><td>João</td><td>Açaí 500ml</td><td class="fw-semibold">20 L</td></tr>
+                  <tr><td class="text-muted">13:55</td><td><span class="mock-badge bg-danger">Saída</span></td><td>Maria</td><td>Morango 1L</td><td class="fw-semibold">15 L</td></tr>
+                  <tr><td class="text-muted">12:10</td><td><span class="mock-badge bg-success">Entrada</span></td><td>Carlos</td><td>Creme 2L</td><td class="fw-semibold">30 un</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Elementos do Dashboard</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Elemento</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6">O que exibe</th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Entradas Hoje</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Soma de todas as entradas registradas no dia corrente</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Saídas Hoje</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Soma de todas as saídas registradas no dia corrente</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Saldo Líquido Hoje</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Entradas − Saídas do dia. Negativo = mais saídas do que entradas</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Estoque por Categoria</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Saldo acumulado (histórico completo) por categoria. Verde = positivo, Vermelho = negativo. Clique para ver o detalhamento por produto</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Gráfico de Barras</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Entradas e saídas por produto no dia corrente</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Últimos Registros</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Os 10 movimentos mais recentes. Clique em "Ver relatório" para ver todos</td></tr>
+  </table>
+  <div class="tip">✅ O <strong>drilldown de categoria</strong> mostra a tabela por produto ao clicar num card. Um botão "← Voltar" retorna à visão geral de categorias.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 3. RELATÓRIOS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-reports">
+  <h2>3. Relatórios</h2>
+  <p>Permite consultar e filtrar todo o histórico de movimentações com exportação em CSV.</p>
+
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/reports</div>
+    </div>
+    <div class="mock-wrap">
+      <nav class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span></div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link active"><i>📊</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
+        </div>
+      </nav>
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <h5>📊 Relatórios</h5>
+          <span class="mock-btn mock-btn-success" style="font-size:.68rem">⬇ Exportar CSV</span>
+        </div>
+        <!-- Filtros -->
+        <div class="mock-card" style="margin-bottom:.5rem">
+          <div class="mock-card-body" style="padding:.5rem">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.35rem;margin-bottom:.35rem">
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">Tipo</label>
+                <select class="mock-select"><option>Todos</option><option>Entrada</option><option>Saída</option></select>
+              </div>
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">De</label>
+                <input class="mock-input" value="2026-05-01 06:00">
+              </div>
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">Até</label>
+                <input class="mock-input" value="2026-05-07 23:59">
+              </div>
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">Turno</label>
+                <select class="mock-select"><option>Todos</option><option>Manhã</option><option>Tarde</option></select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr) auto;gap:.35rem">
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">Operador</label>
+                <select class="mock-select"><option>Todos</option><option>João</option></select>
+              </div>
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">Categoria</label>
+                <select class="mock-select"><option>Todas</option><option>Sorvete</option></select>
+              </div>
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">Produto</label>
+                <select class="mock-select"><option>Todos</option></select>
+              </div>
+              <div class="mock-form-group" style="margin:0">
+                <label class="mock-label">Itens/pág.</label>
+                <select class="mock-select"><option>50</option><option>100</option></select>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:.3rem">
+                <span class="mock-btn mock-btn-primary" style="font-size:.68rem">🔍 Filtrar</span>
+                <span class="mock-btn mock-btn-outline-secondary" style="font-size:.68rem">✕</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Resumo -->
+        <div class="mock-card" style="margin-bottom:.5rem">
+          <div class="mock-card-header">Totais por Produto</div>
+          <table class="mock-table">
+            <thead><tr><th>Produto</th><th>Tipo</th><th>Total</th><th>Registros</th></tr></thead>
+            <tbody>
+              <tr><td>Morango 1L</td><td><span class="mock-badge bg-success">Entrada</span></td><td class="fw-semibold">180,00 L</td><td class="text-muted">12</td></tr>
+              <tr><td>Morango 1L</td><td><span class="mock-badge bg-danger">Saída</span></td><td class="fw-semibold">60,00 L</td><td class="text-muted">8</td></tr>
+              <tr><td>Açaí 500ml</td><td><span class="mock-badge bg-success">Entrada</span></td><td class="fw-semibold">130,00 L</td><td class="text-muted">9</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Detalhamento -->
+        <div class="mock-card">
+          <div class="mock-card-header">Detalhamento (47 registros) <span class="text-muted" style="font-size:.65rem">Página 1 de 1</span></div>
+          <table class="mock-table">
+            <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Categoria</th><th>Operador</th><th>Produto</th><th>Qtd</th><th>Turno</th></tr></thead>
+            <tbody>
+              <tr><td class="text-muted">07/05/2026 14:28</td><td><span class="mock-badge bg-success">Entrada</span></td><td>Açaí</td><td>João</td><td>Açaí 500ml</td><td class="fw-semibold">20 L</td><td class="text-muted">Tarde</td></tr>
+              <tr><td class="text-muted">07/05/2026 13:55</td><td><span class="mock-badge bg-danger">Saída</span></td><td>Sorvete</td><td>Maria</td><td>Morango 1L</td><td class="fw-semibold">15 L</td><td class="text-muted">Tarde</td></tr>
+              <tr><td class="text-muted">07/05/2026 12:10</td><td><span class="mock-badge bg-success">Entrada</span></td><td>Sorvete</td><td>Carlos</td><td>Creme 2L</td><td class="fw-semibold">30 un</td><td class="text-muted">Manhã</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Filtros disponíveis</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Filtro</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Descrição</th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Tipo</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Entrada, Saída ou Todos</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>De / Até</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Intervalo de data e hora para o campo <em>recorded_at</em></td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Turno</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Filtra pelo turno detectado automaticamente no registro</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Operador</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Filtra pelo operador que realizou o movimento</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Categoria</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Ao selecionar uma categoria, o filtro "Produto" é limitado a essa categoria</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Produto</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Filtra por produto específico</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Itens/página</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Quantidade de linhas por página (10 / 50 / 100 / 500)</td></tr>
+  </table>
+  <div class="tip">✅ O botão <strong>✕ (Limpar Filtros)</strong> ao lado de "Filtrar" recarrega a página sem filtros aplicados.</div>
+  <div class="tip">✅ <strong>Exportar CSV</strong> aplica os filtros ativos e gera o download imediatamente — sem limite de paginação.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 4. OPERADORES -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-operators">
+  <h2>4. Administração › Operadores</h2>
+  <p>Gerencia os operadores de fábrica que acessam o terminal ESP32. Cada operador possui um código de crachá e, opcionalmente, um PIN de 4 dígitos para autenticação no terminal.</p>
+
+  <!-- Mockup lista -->
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/operators</div>
+    </div>
+    <div class="mock-wrap">
+      <nav class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span></div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📊</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link active"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
+        </div>
+      </nav>
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <h5>👥 Operadores de Fábrica</h5>
+          <span class="mock-btn mock-btn-primary">+ Novo Operador</span>
+        </div>
+        <div class="mock-card">
+          <table class="mock-table">
+            <thead><tr><th>Nome</th><th>Código (Crachá)</th><th>PIN Terminal</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold">João Silva</td>
+                <td><code>1001</code></td>
+                <td><span class="mock-badge bg-success">🔒 Cadastrado</span></td>
+                <td><span class="mock-badge bg-success">Ativo</span></td>
+                <td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">⊙</span></td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Maria Souza</td>
+                <td><code>1002</code></td>
+                <td><span class="mock-badge bg-warning">🔓 Sem PIN</span></td>
+                <td><span class="mock-badge bg-success">Ativo</span></td>
+                <td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">⊙</span></td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Carlos Lima</td>
+                <td><code>1003</code></td>
+                <td><span class="mock-badge bg-success">🔒 Cadastrado</span></td>
+                <td><span class="mock-badge bg-secondary">Inativo</span></td>
+                <td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">⊙</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Novo Operador -->
+  <h4 style="margin-top:1rem">Modal: Novo Operador</h4>
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/operators</div>
+    </div>
+    <div style="padding:1rem;background:var(--body-bg)">
+      <div style="max-width:380px;margin:0 auto">
+        <div class="mock-modal">
+          <div class="mock-modal-header"><h5>Novo Operador</h5><span class="mock-modal-close">✕</span></div>
+          <div class="mock-modal-body">
+            <div class="mock-form-group">
+              <label class="mock-label">Nome</label>
+              <input class="mock-input" value="Pedro Alves">
+            </div>
+            <div class="mock-form-group">
+              <label class="mock-label">Código do Crachá</label>
+              <input class="mock-input" value="1004" placeholder="Ex: 1004">
+              <div class="mock-form-text">Código digitado ou escaneado no terminal ESP32.</div>
+            </div>
+            <div class="mock-form-group">
+              <label class="mock-label">PIN do Terminal <span class="text-muted" style="font-size:.65rem">(numérico, mín. 4 dígitos)</span></label>
+              <input class="mock-input pw" value="1234" placeholder="Deixe em branco para não definir">
+              <div class="mock-form-text">Será solicitado ao operador ao iniciar movimento no terminal.</div>
+            </div>
+          </div>
+          <div class="mock-modal-footer">
+            <span class="mock-btn mock-btn-outline-secondary">Cancelar</span>
+            <span class="mock-btn mock-btn-primary">Criar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Campos e Ações</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Campo / Ação</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Descrição</th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Nome</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Nome completo do operador, exibido nos relatórios</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Código do Crachá</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Número digitado no teclado do terminal ESP32 para identificar o operador</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>PIN Terminal</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Senha numérica de 4+ dígitos solicitada no terminal após selecionar o operador. Deixar em branco = sem PIN</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>✎ Editar</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Abre modal para alterar nome, código ou redefinir o PIN</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>⊙ Ativar/Desativar</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Operadores inativos não aparecem na lista do terminal ESP32</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 5. PRODUTOS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-products">
+  <h2>5. Administração › Produtos</h2>
+  <p>Cadastra e gerencia os produtos rastreados no estoque. O SKU é o código utilizado para busca no terminal ESP32 — use <strong>somente números</strong>.</p>
+
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/products</div>
+    </div>
+    <div class="mock-wrap">
+      <nav class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span></div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📊</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link active"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
+        </div>
+      </nav>
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <h5>📦 Produtos</h5>
+          <span class="mock-btn mock-btn-primary">+ Novo Produto</span>
+        </div>
+        <div class="mock-card">
+          <table class="mock-table">
+            <thead><tr><th>SKU</th><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr><td><code>101</code></td><td class="fw-semibold">Sorvete Morango 1L</td><td>Sorvete</td><td>L</td><td><span class="mock-badge bg-success">Ativo</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span></td></tr>
+              <tr><td><code>102</code></td><td class="fw-semibold">Sorvete Creme 2L</td><td>Sorvete</td><td>L</td><td><span class="mock-badge bg-success">Ativo</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span></td></tr>
+              <tr><td><code>201</code></td><td class="fw-semibold">Açaí 500ml</td><td>Açaí</td><td>L</td><td><span class="mock-badge bg-success">Ativo</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span></td></tr>
+              <tr><td><code>301</code></td><td class="fw-semibold">Pote 1L</td><td>Embalagem</td><td>un</td><td><span class="mock-badge bg-secondary">Inativo</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Novo Produto -->
+  <h4 style="margin-top:1rem">Modal: Novo / Editar Produto</h4>
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/products</div>
+    </div>
+    <div style="padding:1rem;background:var(--body-bg)">
+      <div style="max-width:380px;margin:0 auto">
+        <div class="mock-modal">
+          <div class="mock-modal-header"><h5>Novo Produto</h5><span class="mock-modal-close">✕</span></div>
+          <div class="mock-modal-body">
+            <div class="mock-form-group">
+              <label class="mock-label">SKU <span style="color:red">*</span></label>
+              <input class="mock-input" value="103" placeholder="Use somente números para ESP32">
+            </div>
+            <div class="mock-form-group">
+              <label class="mock-label">Nome <span style="color:red">*</span></label>
+              <input class="mock-input" value="Sorvete Chocolate 1L">
+            </div>
+            <div class="mock-form-group">
+              <label class="mock-label">Categoria</label>
+              <select class="mock-select"><option>— Sem categoria —</option><option selected>Sorvete</option><option>Açaí</option></select>
+            </div>
+            <div class="mock-form-group">
+              <label class="mock-label">Unidade</label>
+              <select class="mock-select"><option selected>Litros (L)</option><option>Quilograma (kg)</option><option>Unidade (un)</option><option>Pote/Tub (tub)</option><option>Caixa (cx)</option></select>
+            </div>
+          </div>
+          <div class="mock-modal-footer">
+            <span class="mock-btn mock-btn-outline-secondary">Cancelar</span>
+            <span class="mock-btn mock-btn-primary">Criar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn">⚠️ O campo <strong>SKU</strong> é o código digitado no terminal ESP32. Use somente números (ex: <code>101</code>, <code>202</code>) para que funcione com o teclado numérico do terminal.</div>
+
+  <h4>Campos</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Campo</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Descrição</th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>SKU</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Código único do produto. Deve ser numérico para busca no terminal ESP32</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Nome</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Nome completo exibido nos relatórios e no display do terminal</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Categoria</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Agrupa o produto para exibição no Dashboard e filtros de relatório</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Unidade</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Unidade de medida: L, kg, un, tub, cx</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Ativo</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">(edição) Produtos inativos não são buscados pelo terminal</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 6. CATEGORIAS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-categories">
+  <h2>6. Administração › Categorias</h2>
+  <p>Agrupa produtos em categorias para organização dos relatórios e dashboard.</p>
+
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/categories</div>
+    </div>
+    <div class="mock-wrap">
+      <nav class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span></div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📊</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link active"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
+        </div>
+      </nav>
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <div>
+            <h5>🏷️ Categorias de Produtos</h5>
+            <div class="text-muted" style="font-size:.65rem">Agrupe produtos por categoria para organização e relatórios</div>
+          </div>
+          <span class="mock-btn mock-btn-primary">+ Nova Categoria</span>
+        </div>
+        <div class="mock-card">
+          <table class="mock-table">
+            <thead><tr><th>Nome</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr><td class="fw-semibold">Sorvete</td><td><span class="mock-badge bg-success">Ativa</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">🗑</span></td></tr>
+              <tr><td class="fw-semibold">Açaí</td><td><span class="mock-badge bg-success">Ativa</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">🗑</span></td></tr>
+              <tr><td class="fw-semibold">Embalagem</td><td><span class="mock-badge bg-success">Ativa</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">🗑</span></td></tr>
+              <tr><td class="fw-semibold">Polpa</td><td><span class="mock-badge bg-secondary">Inativa</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">🗑</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">ℹ️ Ao excluir uma categoria, os produtos vinculados a ela <strong>não são excluídos</strong> — ficam sem categoria (campo exibe "—" nos relatórios).</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 7. USUÁRIOS WEB -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-users">
+  <h2>7. Administração › Usuários Web</h2>
+  <p>Gerencia os usuários do portal web. Perfis disponíveis: <strong>admin</strong> (acesso total) e <strong>user</strong> (acesso ao Dashboard e Relatórios).</p>
+
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/users</div>
+    </div>
+    <div class="mock-wrap">
+      <nav class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span></div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📊</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link active"><i>⚙️</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
+        </div>
+      </nav>
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <h5>⚙️ Usuários Web</h5>
+          <span class="mock-btn mock-btn-primary">+ Novo Usuário</span>
+        </div>
+        <div class="mock-card">
+          <table class="mock-table">
+            <thead><tr><th>Usuário</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Ativo</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold">admin</td><td>Administrador</td><td class="text-muted">—</td>
+                <td><span class="mock-badge bg-warning">admin</span></td>
+                <td><span class="mock-badge bg-success">Ativo</span></td>
+                <td><span class="mock-btn mock-btn-outline-warning">🔑</span> <span class="mock-btn mock-btn-outline-danger">⊙</span></td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">supervisor</td><td>Ana Paula</td><td class="text-muted">ana@sorvpel.com</td>
+                <td><span class="mock-badge bg-secondary">user</span></td>
+                <td><span class="mock-badge bg-success">Ativo</span></td>
+                <td><span class="mock-btn mock-btn-outline-warning">🔑</span> <span class="mock-btn mock-btn-outline-danger">⊙</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Campos e Ações</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Campo / Ação</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Descrição</th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Usuário</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Login para acesso ao portal. Não pode ser alterado após criação</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Nome completo</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Nome exibido na sidebar e relatórios</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>E-mail</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Opcional — apenas para controle interno</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Perfil: admin</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Acesso completo: Dashboard, Relatórios e toda a seção Admin</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Perfil: user</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Acesso somente ao Dashboard e Relatórios — não vê o menu Admin</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>🔑 Redefinir Senha</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Abre um prompt para definir uma nova senha ao usuário (admin pode redefinir senha de qualquer usuário)</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>⊙ Ativar/Desativar</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Usuários inativos não conseguem fazer login</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 8. TURNOS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-shifts">
+  <h2>8. Administração › Turnos</h2>
+  <p>Define os períodos de turno. O sistema detecta automaticamente o turno de cada registro com base no horário de <code>recorded_at</code>.</p>
+
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/shifts</div>
+    </div>
+    <div class="mock-wrap">
+      <nav class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span></div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📊</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
+          <div class="mock-nav-link active"><i>🕐</i> Turnos</div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
+        </div>
+      </nav>
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <div>
+            <h5>🕐 Gerenciar Turnos</h5>
+            <div class="text-muted" style="font-size:.65rem">O turno é detectado automaticamente pelo horário de cada registro</div>
+          </div>
+          <span class="mock-btn mock-btn-primary">+ Novo Turno</span>
+        </div>
+        <div class="mock-card" style="margin-bottom:.5rem">
+          <table class="mock-table">
+            <thead><tr><th>Nome</th><th>Rótulo</th><th>Início</th><th>Fim</th><th>Cobertura</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr><td><code>MANHA</code></td><td class="fw-semibold">Manhã</td><td>06:00</td><td>14:00</td><td class="text-muted" style="font-size:.65rem">06:00 – 14:00</td><td><span class="mock-badge bg-success">Ativo</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">🗑</span></td></tr>
+              <tr><td><code>TARDE</code></td><td class="fw-semibold">Tarde</td><td>14:00</td><td>22:00</td><td class="text-muted" style="font-size:.65rem">14:00 – 22:00</td><td><span class="mock-badge bg-success">Ativo</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">🗑</span></td></tr>
+              <tr><td><code>NOTURNO</code></td><td class="fw-semibold">Noturno</td><td>22:00</td><td>06:00</td><td class="text-muted" style="font-size:.65rem">22:00 – 00:00 / 00:00 – 06:00 <span class="mock-badge bg-info">vira meia-noite</span></td><td><span class="mock-badge bg-success">Ativo</span></td><td><span class="mock-btn mock-btn-outline-primary">✎</span> <span class="mock-btn mock-btn-outline-danger">🗑</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mock-alert mock-alert-info">
+          <strong>Como funciona:</strong> ao registrar uma entrada ou saída, o servidor detecta automaticamente o turno com base no horário de <code>recorded_at</code>. Se Início &gt; Fim, o turno cruza meia-noite (ex: 22 → 06).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Campos</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Campo</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Descrição</th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Nome interno</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Identificador armazenado nos registros (ex: <code>MANHA</code>). Não pode ser alterado após uso</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Rótulo</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Nome exibido na interface (ex: "Manhã")</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Hora início (0–23)</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Hora de início do turno, inclusiva</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Hora fim (0–23, exclusivo)</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Hora de fim do turno, exclusiva. Se início &gt; fim, o turno cruza meia-noite</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 9. ALTERAR SENHA -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-password">
+  <h2>9. Alterar Senha</h2>
+  <p>Qualquer usuário pode alterar sua própria senha clicando no <strong>ícone de chave 🔑</strong> ao lado do nome de usuário no rodapé esquerdo do menu lateral.</p>
+
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/dashboard</div>
+    </div>
+    <div style="background:rgba(0,0,0,.45);padding:1.5rem;display:flex;justify-content:center">
+      <div class="mock-modal" style="width:300px">
+        <div class="mock-modal-header"><h5>🔑 Alterar Senha</h5><span class="mock-modal-close">✕</span></div>
+        <div class="mock-modal-body">
+          <div class="mock-form-group">
+            <label class="mock-label">Senha atual</label>
+            <input class="mock-input pw" value="admin123">
+          </div>
+          <div class="mock-form-group">
+            <label class="mock-label">Nova senha</label>
+            <input class="mock-input pw" value="MinhaSenha2026">
+          </div>
+          <div class="mock-form-group" style="margin-bottom:0">
+            <label class="mock-label">Confirmar nova senha</label>
+            <input class="mock-input pw" value="MinhaSenha2026">
+          </div>
+        </div>
+        <div class="mock-modal-footer">
+          <span class="mock-btn mock-btn-outline-secondary">Cancelar</span>
+          <span class="mock-btn mock-btn-primary">Salvar</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Regras</h4>
+  <ul>
+    <li>A senha atual deve estar correta</li>
+    <li>A nova senha deve ter pelo menos <strong>6 caracteres</strong></li>
+    <li>Nova senha e confirmação devem ser iguais</li>
+    <li>Após salvar, o modal fecha automaticamente em 1,5 s</li>
+    <li>Administradores podem redefinir a senha de outros usuários em <em>Admin › Usuários Web › 🔑</em></li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 10. ESP32 FLUXO -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-esp32">
+  <h2>10. Terminal ESP32 — Fluxo de Operação</h2>
+  <p>O terminal ESP32 é um dispositivo instalado na linha de produção. Possui display LCD 20×4 e teclado matricial 4×3 (<kbd>0</kbd>–<kbd>9</kbd>, <kbd>*</kbd>, <kbd>#</kbd>). O operador registra entradas e saídas sem acessar o portal web.</p>
+
+  <h3>Teclado</h3>
+  <div style="display:flex;align-items:flex-start;gap:2rem;margin-bottom:1.2rem;flex-wrap:wrap">
+    <div>
+      <div class="esp-keypad">
+        <div class="esp-key">1</div><div class="esp-key">2</div><div class="esp-key">3</div>
+        <div class="esp-key">4</div><div class="esp-key">5</div><div class="esp-key">6</div>
+        <div class="esp-key">7</div><div class="esp-key">8</div><div class="esp-key">9</div>
+        <div class="esp-key special">*</div><div class="esp-key">0</div><div class="esp-key special">#</div>
+      </div>
+    </div>
+    <div style="font-size:.88rem">
+      <table style="border-collapse:collapse">
+        <tr><td style="padding:.3rem .6rem;border:1px solid #dee2e6"><kbd>0</kbd>–<kbd>9</kbd></td><td style="padding:.3rem .6rem;border:1px solid #dee2e6">Digitar números (crachá, PIN, código, quantidade)</td></tr>
+        <tr><td style="padding:.3rem .6rem;border:1px solid #dee2e6"><kbd>#</kbd></td><td style="padding:.3rem .6rem;border:1px solid #dee2e6"><strong>Confirmar</strong> / Avançar</td></tr>
+        <tr><td style="padding:.3rem .6rem;border:1px solid #dee2e6"><kbd>*</kbd></td><td style="padding:.3rem .6rem;border:1px solid #dee2e6"><strong>Apagar</strong> último dígito ou <strong>Cancelar</strong> / Voltar</td></tr>
+        <tr><td style="padding:.3rem .6rem;border:1px solid #dee2e6"><kbd>*</kbd> (tela ociosa)</td><td style="padding:.3rem .6rem;border:1px solid #dee2e6">Iniciar novo registro</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>Fluxo completo</h3>
+  <div class="flow">
+    <div class="flow-step">Tela Ociosa</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Digite Crachá</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Digite PIN</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Tipo (1=Entrada / 2=Saída)</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Código Produto</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Quantidade</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Confirmação</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Enviando…</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Sucesso / Erro</div>
+  </div>
+  <div class="note">ℹ️ Se o operador não tiver PIN cadastrado, a etapa "Digite PIN" é pulada automaticamente.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 11. ESP32 TELAS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-esp32-screens">
+  <h2>11. Terminal ESP32 — Telas do Display</h2>
+  <p>O display LCD exibe 4 linhas de 20 caracteres. A seguir estão todas as telas que o operador encontrará.</p>
+
+  <!-- TELA 1 — Boot -->
+  <h3>11.1 Inicialização (Boot)</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Conectando ao WiFi</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">SorvPel v1.0        </div>
+        <div class="esp-lcd-line">Conectando WiFi...  </div>
+        <div class="esp-lcd-line">SSID: MinhRede      </div>
+        <div class="esp-lcd-line">                    </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">WiFi conectado / Carregando dados</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">SorvPel v1.0        </div>
+        <div class="esp-lcd-line">WiFi OK             </div>
+        <div class="esp-lcd-line">IP: 192.168.1.201   </div>
+        <div class="esp-lcd-line">Carregando...       </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:300px">
+      <p>Ao ligar, o terminal:</p>
+      <ol>
+        <li>Conecta ao WiFi configurado</li>
+        <li>Busca a lista de operadores e turnos na API</li>
+        <li>Verifica atualizações OTA</li>
+        <li>Exibe a tela ociosa</li>
+      </ol>
+      <div class="warn" style="margin-top:.5rem">⚠️ Se o WiFi falhar, o display exibe o erro e o terminal fica aguardando. Verifique a rede e reinicie.</div>
+    </div>
+  </div>
+
+  <!-- TELA 2 — Ociosa -->
+  <h3>11.2 Tela Ociosa (Idle)</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Aguardando operador</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">==SorvPel=ESTOQUE==</div>
+        <div class="esp-lcd-line">07/05/26  14:32     </div>
+        <div class="esp-lcd-line">                    </div>
+        <div class="esp-lcd-line">  Pressione [*]     </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:340px">
+      <p>Exibida sempre que nenhum operador está em atendimento.</p>
+      <ul>
+        <li>Atualiza data/hora em tempo real</li>
+        <li>Pressione <kbd>*</kbd> para iniciar um novo registro</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TELA 3 — Selecionar Operador -->
+  <h3>11.3 Identificação do Operador</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Aguardando código</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">IDENTIFICACAO       </div>
+        <div class="esp-lcd-line">Codigo do cracha:   </div>
+        <div class="esp-lcd-line">_</div>
+        <div class="esp-lcd-line">[#]OK  [*]Cancelar  </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Digitando código</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">IDENTIFICACAO       </div>
+        <div class="esp-lcd-line">Codigo do cracha:   </div>
+        <div class="esp-lcd-line">1002<span class="cursor"> </span></div>
+        <div class="esp-lcd-line">[#]OK  [*]Apagar    </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:300px">
+      <p>O operador digita o <strong>código do crachá</strong> cadastrado no portal.</p>
+      <ul>
+        <li><kbd>#</kbd> = confirmar e buscar operador na API</li>
+        <li><kbd>*</kbd> = apagar último dígito</li>
+        <li><kbd>*</kbd> (campo vazio) = cancelar e voltar</li>
+      </ul>
+      <div class="note">Se o código não for encontrado, exibe "Operador nao encontrado!" por 2 s e retorna.</div>
+    </div>
+  </div>
+
+  <!-- TELA 4 — PIN -->
+  <h3>11.4 PIN do Operador</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Solicitando PIN</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">OLA, JOAO SILVA     </div>
+        <div class="esp-lcd-line">Digite seu PIN:     </div>
+        <div class="esp-lcd-line">****<span class="cursor"> </span></div>
+        <div class="esp-lcd-line">[#]OK  [*]Voltar    </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">PIN incorreto</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">OLA, JOAO SILVA     </div>
+        <div class="esp-lcd-line">                    </div>
+        <div class="esp-lcd-line esp-lcd-dim">PIN INCORRETO!      </div>
+        <div class="esp-lcd-line">Tente novamente...  </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:300px">
+      <p>Exibida somente se o operador tiver PIN cadastrado.</p>
+      <ul>
+        <li>Os dígitos aparecem mascarados como <code>****</code></li>
+        <li><kbd>#</kbd> = verificar PIN via API</li>
+        <li><kbd>*</kbd> = apagar dígito / voltar (campo vazio)</li>
+        <li>PIN errado: aguarda 2 s e retorna ao início</li>
+        <li>PIN certo: avança para seleção de tipo</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TELA 5 — Tipo -->
+  <h3>11.5 Selecionar Tipo de Movimento</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Selecionar tipo</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">JOAO SILVA          </div>
+        <div class="esp-lcd-line">Tipo:               </div>
+        <div class="esp-lcd-line"> [1] ENTRADA         </div>
+        <div class="esp-lcd-line"> [2] SAIDA           </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:300px">
+      <ul>
+        <li><kbd>1</kbd> = Entrada de produto no estoque</li>
+        <li><kbd>2</kbd> = Saída de produto do estoque</li>
+        <li><kbd>*</kbd> = Voltar à tela anterior</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TELA 6 — Código Produto -->
+  <h3>11.6 Código do Produto (SKU)</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Aguardando código</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">ENTRADA             </div>
+        <div class="esp-lcd-line">Codigo do produto:  </div>
+        <div class="esp-lcd-line">_</div>
+        <div class="esp-lcd-line">[#]OK  [*]Voltar    </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Digitando SKU</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">ENTRADA             </div>
+        <div class="esp-lcd-line">Codigo do produto:  </div>
+        <div class="esp-lcd-line">201<span class="cursor"> </span></div>
+        <div class="esp-lcd-line">[#]Buscar [*]Apagar </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Produto não encontrado</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">ENTRADA             </div>
+        <div class="esp-lcd-line">                    </div>
+        <div class="esp-lcd-line esp-lcd-dim">Nao encontrado!     </div>
+        <div class="esp-lcd-line">Verifique o codigo  </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:280px">
+      <p>O operador digita o <strong>SKU numérico</strong> do produto e pressiona <kbd>#</kbd>. O terminal consulta a API em tempo real.</p>
+      <ul>
+        <li>Produto encontrado → avança para quantidade</li>
+        <li>Não encontrado → aguarda 2 s e retorna</li>
+        <li><kbd>*</kbd> = apagar dígito / voltar</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TELA 7 — Produto confirmado -->
+  <h3>11.7 Produto Localizado — Digitar Quantidade</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Produto exibido</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">ENTRADA             </div>
+        <div class="esp-lcd-line">Acai 500ml          </div>
+        <div class="esp-lcd-line">Qtd (L): _</div>
+        <div class="esp-lcd-line">[#]OK  [*]Voltar    </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Digitando quantidade</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">ENTRADA             </div>
+        <div class="esp-lcd-line">Acai 500ml          </div>
+        <div class="esp-lcd-line">Qtd (L): 50<span class="cursor"> </span></div>
+        <div class="esp-lcd-line">[#]OK  [*]Apagar    </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:300px">
+      <p>O display mostra o nome do produto e a unidade. O operador digita a quantidade.</p>
+      <ul>
+        <li>Aceita somente números inteiros positivos</li>
+        <li><kbd>#</kbd> = confirmar e avançar</li>
+        <li><kbd>*</kbd> = apagar dígito / voltar</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TELA 8 — Confirmação -->
+  <h3>11.8 Confirmação do Registro</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Resumo para confirmar</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">CONFIRMAR?          </div>
+        <div class="esp-lcd-line">ENTRADA 50L         </div>
+        <div class="esp-lcd-line">Acai 500ml          </div>
+        <div class="esp-lcd-line">[#]SIM  [*]NAO      </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:300px">
+      <p>Tela de revisão antes de enviar ao servidor.</p>
+      <ul>
+        <li><kbd>#</kbd> = confirmar e enviar</li>
+        <li><kbd>*</kbd> = cancelar e voltar à tela de tipo</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TELA 9 — Enviando / Resultado -->
+  <h3>11.9 Enviando e Resultado</h3>
+  <div class="esp-section">
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Enviando para o servidor</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">Enviando...         </div>
+        <div class="esp-lcd-line">                    </div>
+        <div class="esp-lcd-line">                    </div>
+        <div class="esp-lcd-line">Aguarde...          </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Sucesso</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">*** REGISTRADO ***  </div>
+        <div class="esp-lcd-line">ENTRADA 50L         </div>
+        <div class="esp-lcd-line">Acai 500ml          </div>
+        <div class="esp-lcd-line">Turno: Tarde        </div>
+      </div>
+    </div>
+    <div class="esp-screen-wrap">
+      <div class="esp-label">Erro de comunicação</div>
+      <div class="esp-lcd">
+        <div class="esp-lcd-line">ERRO AO ENVIAR      </div>
+        <div class="esp-lcd-line">                    </div>
+        <div class="esp-lcd-line esp-lcd-dim">Erro HTTP: 500      </div>
+        <div class="esp-lcd-line">Verifique a rede    </div>
+      </div>
+    </div>
+    <div style="font-size:.85rem;max-width:280px">
+      <p>Após envio bem-sucedido, o display mostra o registro confirmado com o turno detectado automaticamente. Após 3 s retorna à tela ociosa.</p>
+      <div class="warn" style="margin-top:.5rem">⚠️ Em caso de erro, o registro <strong>não foi gravado</strong>. Tente novamente. Se persistir, verifique a conexão de rede do terminal.</div>
+    </div>
+  </div>
+
+  <!-- Referência rápida -->
+  <h3 style="margin-top:1.5rem">Referência Rápida de Teclas</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa"><th style="padding:.4rem .6rem;border:1px solid #dee2e6">Tela</th><th style="padding:.4rem .6rem;border:1px solid #dee2e6"><kbd>#</kbd></th><th style="padding:.4rem .6rem;border:1px solid #dee2e6"><kbd>*</kbd></th><th style="padding:.4rem .6rem;border:1px solid #dee2e6"><kbd>0–9</kbd></th></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Ociosa</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">—</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Iniciar registro</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">—</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Código do crachá</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Confirmar / buscar</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Apagar / voltar</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Digitar código</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6">PIN</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Verificar PIN</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Apagar / voltar</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Digitar PIN (oculto)</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Tipo (Entrada/Saída)</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">—</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Voltar</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><kbd>1</kbd>=Entrada, <kbd>2</kbd>=Saída</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Código do produto</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Buscar produto</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Apagar / voltar</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Digitar SKU numérico</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Quantidade</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Confirmar quantidade</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Apagar / voltar</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Digitar quantidade</td></tr>
+    <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Confirmação</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Enviar registro</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Cancelar</td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">—</td></tr>
+  </table>
+</div>
+
+<!-- Rodapé -->
+<div style="border-top:2px solid var(--brand);padding-top:1rem;margin-top:2rem;text-align:center;color:#6c757d;font-size:.8rem">
+  SorvPel Controle de Estoque — Manual Operacional v1.0 · 2026<br>
+  Para suporte técnico consulte o Manual de Instalação e Manutenção (<code>docs/SorvPel_Manual.html</code>)
+</div>
+
+</div><!-- /page -->
+</body>
+</html>
