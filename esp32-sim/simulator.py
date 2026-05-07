@@ -20,23 +20,23 @@ API_KEY      = os.getenv("API_KEY", "")
 DEVICE_ID    = os.getenv("DEVICE_ID", "SIM-TERMINAL-01")
 IDLE_TIMEOUT = int(os.getenv("MENU_IDLE_MS", "60000")) / 1000.0
 
-_shifts: list[dict] = []  # carregado da API em fetch_data
+_shifts: list[dict] = []
 
 
 class State(Enum):
-    IDLE            = "IDLE"
-    SELECT_OPERATOR = "SELECT_OPERATOR"
-    SELECT_TYPE     = "SELECT_TYPE"
-    SELECT_PRODUCT  = "SELECT_PRODUCT"
-    ENTER_QUANTITY  = "ENTER_QUANTITY"
-    CONFIRM         = "CONFIRM"
-    SEND            = "SEND"
-    SUCCESS         = "SUCCESS"
-    ERROR           = "ERROR"
+    IDLE             = "IDLE"
+    SELECT_OPERATOR  = "SELECT_OPERATOR"
+    ENTER_PIN        = "ENTER_PIN"
+    SELECT_TYPE      = "SELECT_TYPE"
+    SELECT_PRODUCT   = "SELECT_PRODUCT"
+    ENTER_QUANTITY   = "ENTER_QUANTITY"
+    CONFIRM          = "CONFIRM"
+    SEND             = "SEND"
+    SUCCESS          = "SUCCESS"
+    ERROR            = "ERROR"
 
 
 def current_shift() -> str:
-    """Detecta o turno atual com base nos turnos carregados da API."""
     hour = datetime.now().hour
     for s in _shifts:
         if not s.get("is_active", True):
@@ -55,20 +55,21 @@ def current_shift() -> str:
 
 class Simulator:
     def __init__(self):
-        self.state          = State.IDLE
+        self.state             = State.IDLE
         self.operators: list[dict] = []
-        self.products:  list[dict] = []
-        self.op_idx         = 0
-        self.prod_idx       = 0
-        self.is_entry       = True
-        self.num_buf        = ""
-        self.quantity       = 0.0
-        self.last_activity  = time.monotonic()
-        self.error_msg      = ""
+        self.op_idx            = 0
+        self.selected_op: dict = {}
+        self.selected_prod: dict = {}
+        self.is_entry          = True
+        self.num_buf           = ""   # quantidade ou PIN
+        self.code_buf          = ""   # código de produto
+        self.quantity          = 0.0
+        self.last_activity     = time.monotonic()
+        self.error_msg         = ""
         self.last_movement_id: int | None = None
-        self.lcd: list[str] = [" " * LCD_COLS] * LCD_ROWS
-        self.log: list[str] = []
-        self._lock          = threading.Lock()
+        self.lcd: list[str]    = [" " * LCD_COLS] * LCD_ROWS
+        self.log: list[str]    = []
+        self._lock             = threading.Lock()
 
     def _set_lcd(self, *lines):
         result = []
@@ -90,10 +91,7 @@ class Simulator:
         self.last_activity = time.monotonic()
         self._render()
 
-    # ── helpers para listas de 3 linhas ──────────────────────────────────────
-
     def _list_lines(self, items: list[str], selected: int) -> list[str]:
-        """Retorna 3 linhas com scroll, seta > no item selecionado."""
         n = len(items)
         if n == 0:
             return ["", "", ""]
@@ -111,9 +109,7 @@ class Simulator:
     # ── render ────────────────────────────────────────────────────────────────
 
     def _render(self):
-        s     = self.state
-        ops   = self.operators
-        prods = self.products
+        s = self.state
 
         if s == State.IDLE:
             self._set_lcd(
@@ -124,7 +120,7 @@ class Simulator:
             )
 
         elif s == State.SELECT_OPERATOR:
-            if not ops:
+            if not self.operators:
                 self._set_lcd(
                     "- Selec. Operador --",
                     "  Sem operadores!   ",
@@ -132,9 +128,19 @@ class Simulator:
                     "",
                 )
                 return
-            nomes = [op["name"] for op in ops]
+            nomes = [op["name"] for op in self.operators]
             r1, r2, r3 = self._list_lines(nomes, self.op_idx)
             self._set_lcd("- Selec. Operador --", r1, r2, r3)
+
+        elif s == State.ENTER_PIN:
+            op_name = self.selected_op.get("name", "?")
+            masked  = "*" * len(self.num_buf) if self.num_buf else ""
+            self._set_lcd(
+                "--- Senha Operador -",
+                f"Op: {op_name[:16]}",
+                f"PIN: {masked:<15}",
+                "#=ok  *=apaga  Esc=vol",
+            )
 
         elif s == State.SELECT_TYPE:
             self._set_lcd(
@@ -145,72 +151,49 @@ class Simulator:
             )
 
         elif s == State.SELECT_PRODUCT:
-            if not prods:
-                self._set_lcd(
-                    "-- Selec. Produto --",
-                    "  Sem produtos!     ",
-                    "  Cheque servidor.  ",
-                    "",
-                )
-                return
             tipo = "Entrada" if self.is_entry else "Saida"
-            nomes = [p["name"] for p in prods]
-            r1, r2, r3 = self._list_lines(nomes, self.prod_idx)
-            self._set_lcd(f"--{tipo}: Produto----", r1, r2, r3)
+            code = self.code_buf or ""
+            self._set_lcd(
+                f"-{tipo}: Cod Produto-",
+                f"Digite: {code:<12}",
+                "",
+                "#=ok  *=apaga  Esc=vol",
+            )
 
         elif s == State.ENTER_QUANTITY:
-            if not prods:
-                return
-            p    = prods[self.prod_idx]
-            op   = ops[self.op_idx] if ops else {"name": "?"}
+            p    = self.selected_prod
+            op   = self.selected_op
             tipo = "Entrada" if self.is_entry else "Saida"
             unit = p.get("unit", "")
             qtd  = self.num_buf or "0"
             self._set_lcd(
-                f"{tipo}: {p['name'][:13]}",
-                f"Op: {op['name'][:16]}",
+                f"{tipo}: {p.get('name','?')[:13]}",
+                f"Op: {op.get('name','?')[:16]}",
                 f"Qtd: {qtd} {unit}"[:LCD_COLS],
                 "#=ok  *=apaga  B=vol",
             )
 
         elif s == State.CONFIRM:
-            if not prods or not ops:
-                return
-            op   = ops[self.op_idx]
-            p    = prods[self.prod_idx]
+            op   = self.selected_op
+            p    = self.selected_prod
             tipo = "ENT" if self.is_entry else "SAI"
             unit = p.get("unit", "")
             self._set_lcd(
                 "--- Confirmar Env. -",
-                f"{tipo}: {p['name'][:15]}",
-                f"Op:{op['name'][:10]} {self.num_buf}{unit}"[:LCD_COLS],
+                f"{tipo}: {p.get('name','?')[:15]}",
+                f"Op:{op.get('name','?')[:10]} {self.num_buf}{unit}"[:LCD_COLS],
                 "#=enviar  *=cancelar",
             )
 
         elif s == State.SEND:
-            self._set_lcd(
-                "",
-                "    Enviando...     ",
-                "    Aguarde...      ",
-                "",
-            )
+            self._set_lcd("", "    Enviando...     ", "    Aguarde...      ", "")
 
         elif s == State.SUCCESS:
             mid = f"   id: {self.last_movement_id}" if self.last_movement_id else ""
-            self._set_lcd(
-                "",
-                "  Registrado! OK    ",
-                mid,
-                "  Pressione #       ",
-            )
+            self._set_lcd("", "  Registrado! OK    ", mid, "  Pressione #       ")
 
         elif s == State.ERROR:
-            self._set_lcd(
-                "",
-                "  Erro:             ",
-                f"  {self.error_msg[:17]}",
-                "  Pressione #       ",
-            )
+            self._set_lcd("", "  Erro:             ", f"  {self.error_msg[:17]}", "  Pressione #       ")
 
     # ── handle_key ────────────────────────────────────────────────────────────
 
@@ -226,8 +209,9 @@ class Simulator:
         elif s == State.SELECT_OPERATOR:
             if key == "#":
                 if self.operators:
-                    self.prod_idx = 0
-                    self._go(State.SELECT_TYPE)
+                    self.selected_op = self.operators[self.op_idx]
+                    self.num_buf = ""
+                    self._go(State.ENTER_PIN)
             elif key == "*":
                 self._go(State.IDLE)
             elif key == "A" and self.op_idx > 0:
@@ -235,24 +219,38 @@ class Simulator:
             elif key == "B" and self.op_idx + 1 < len(self.operators):
                 self.op_idx += 1; self._render()
 
+        elif s == State.ENTER_PIN:
+            if key.isdigit() and len(self.num_buf) < 8:
+                self.num_buf += key; self._render()
+            elif key == "*":
+                if self.num_buf:
+                    self.num_buf = self.num_buf[:-1]; self._render()
+                else:
+                    self.num_buf = ""
+                    self._go(State.SELECT_OPERATOR)
+            elif key == "#":
+                if self.num_buf:
+                    threading.Thread(target=self._verify_pin, daemon=True).start()
+
         elif s == State.SELECT_TYPE:
             if key == "1":
-                self.is_entry = True;  self.prod_idx = 0; self._go(State.SELECT_PRODUCT)
+                self.is_entry = True;  self.code_buf = ""; self._go(State.SELECT_PRODUCT)
             elif key == "2":
-                self.is_entry = False; self.prod_idx = 0; self._go(State.SELECT_PRODUCT)
+                self.is_entry = False; self.code_buf = ""; self._go(State.SELECT_PRODUCT)
             elif key == "*":
                 self._go(State.SELECT_OPERATOR)
 
         elif s == State.SELECT_PRODUCT:
-            if key == "#":
-                if self.products:
-                    self.num_buf = ""; self._go(State.ENTER_QUANTITY)
+            if key.isdigit() and len(self.code_buf) < 10:
+                self.code_buf += key; self._render()
             elif key == "*":
-                self._go(State.SELECT_TYPE)
-            elif key == "A" and self.prod_idx > 0:
-                self.prod_idx -= 1; self._render()
-            elif key == "B" and self.prod_idx + 1 < len(self.products):
-                self.prod_idx += 1; self._render()
+                if self.code_buf:
+                    self.code_buf = self.code_buf[:-1]; self._render()
+                else:
+                    self._go(State.SELECT_TYPE)
+            elif key == "#":
+                if self.code_buf:
+                    threading.Thread(target=self._lookup_product, args=(self.code_buf,), daemon=True).start()
 
         elif s == State.ENTER_QUANTITY:
             if key.isdigit() and len(self.num_buf) < 6:
@@ -261,12 +259,12 @@ class Simulator:
                 if self.num_buf:
                     self.num_buf = self.num_buf[:-1]; self._render()
                 else:
-                    self._go(State.SELECT_PRODUCT)
+                    self.code_buf = ""; self._go(State.SELECT_PRODUCT)
             elif key == "#":
                 if self.num_buf and float(self.num_buf) > 0:
                     self.quantity = float(self.num_buf); self._go(State.CONFIRM)
             elif key == "B":
-                self._go(State.SELECT_PRODUCT)
+                self.code_buf = ""; self._go(State.SELECT_PRODUCT)
 
         elif s == State.CONFIRM:
             if key == "#":
@@ -276,7 +274,7 @@ class Simulator:
                 self._go(State.ENTER_QUANTITY)
 
         elif s in (State.SUCCESS, State.ERROR):
-            self.op_idx = 0; self.prod_idx = 0; self.num_buf = ""
+            self.num_buf = ""; self.code_buf = ""
             self._go(State.IDLE)
 
     # ── handle_scanner ────────────────────────────────────────────────────────
@@ -290,17 +288,16 @@ class Simulator:
             for i, op in enumerate(self.operators):
                 if op.get("badge_code") == code:
                     self.op_idx = i
+                    self.selected_op = op
                     self.add_log(f"Scanner: operador '{op['name']}'")
-                    self.prod_idx = 0; self._go(State.SELECT_TYPE); return
+                    self.num_buf = ""
+                    self._go(State.ENTER_PIN)
+                    return
             self.add_log(f"Scanner: badge '{code}' nao encontrado")
 
         elif s == State.SELECT_PRODUCT:
-            for i, prod in enumerate(self.products):
-                if prod.get("name") == code or str(i) == code:
-                    self.prod_idx = i
-                    self.add_log(f"Scanner: produto '{prod['name']}'")
-                    self.num_buf = ""; self._go(State.ENTER_QUANTITY); return
-            self.add_log(f"Scanner: produto '{code}' nao encontrado")
+            self.code_buf = code
+            threading.Thread(target=self._lookup_product, args=(code,), daemon=True).start()
 
     def check_idle_timeout(self):
         if self.state not in (State.IDLE, State.SEND):
@@ -312,13 +309,9 @@ class Simulator:
 
     def fetch_data(self):
         global _shifts
-        self._set_lcd(
-            "   Conectando...    ",
-            "  Buscando dados... ",
-            "",
-            "",
-        )
+        self._set_lcd("   Conectando...    ", "  Buscando dados... ", "", "")
         headers = {"X-API-Key": API_KEY}
+
         try:
             r = requests.get(f"{SERVER_URL}/api/v1/operators", headers=headers, timeout=8)
             r.raise_for_status()
@@ -326,14 +319,6 @@ class Simulator:
             self.add_log(f"GET /api/v1/operators -> {len(self.operators)} registros")
         except Exception as e:
             self.add_log(f"ERRO /api/v1/operators: {e}")
-
-        try:
-            r = requests.get(f"{SERVER_URL}/api/v1/products", headers=headers, timeout=8)
-            r.raise_for_status()
-            self.products = r.json()
-            self.add_log(f"GET /api/v1/products  -> {len(self.products)} registros")
-        except Exception as e:
-            self.add_log(f"ERRO /api/v1/products: {e}")
 
         try:
             r = requests.get(f"{SERVER_URL}/api/v1/shifts", headers=headers, timeout=8)
@@ -345,9 +330,94 @@ class Simulator:
 
         self._go(State.IDLE)
 
+    def _verify_pin(self):
+        """Valida o PIN do operador via API (chamado em thread separada)."""
+        op_id = self.selected_op.get("id")
+        pin   = self.num_buf
+        self.add_log(f"POST /api/v1/operators/{op_id}/verify-pin")
+        try:
+            r = requests.post(
+                f"{SERVER_URL}/api/v1/operators/{op_id}/verify-pin",
+                json={"pin": pin},
+                headers={"X-API-Key": API_KEY, "Content-Type": "application/json"},
+                timeout=8,
+            )
+            if r.status_code == 200:
+                self.add_log(f"PIN OK: operador {self.selected_op.get('name')}")
+                self.num_buf = ""
+                self._go(State.SELECT_TYPE)
+            elif r.status_code == 401:
+                self.add_log("PIN incorreto")
+                self.error_msg = "PIN incorreto"
+                self._set_lcd(
+                    "--- Senha Operador -",
+                    f"Op: {self.selected_op.get('name','?')[:16]}",
+                    "  PIN INCORRETO!    ",
+                    "  Esc=voltar        ",
+                )
+                time.sleep(2)
+                self.num_buf = ""
+                self._go(State.ENTER_PIN)
+            else:
+                detail = r.json().get("detail", f"HTTP {r.status_code}")
+                self.add_log(f"Erro verify-pin: {detail}")
+                self.error_msg = detail[:17]
+                self._set_lcd(
+                    "--- Senha Operador -",
+                    f"Op: {self.selected_op.get('name','?')[:16]}",
+                    f"  {self.error_msg}",
+                    "  Esc=voltar        ",
+                )
+                time.sleep(2)
+                self.num_buf = ""
+                self._go(State.ENTER_PIN)
+        except Exception as e:
+            self.add_log(f"ERRO verify-pin: {e}")
+            self.error_msg = str(e)[:17]
+            self.num_buf = ""
+            self._go(State.ENTER_PIN)
+
+    def _lookup_product(self, sku: str):
+        """Busca produto pelo código SKU via API (chamado em thread separada)."""
+        self.add_log(f"GET /api/v1/products/by-sku/{sku}")
+        self._set_lcd(
+            "-- Buscando Prod. --",
+            f"Cod: {sku[:14]}",
+            "  Aguarde...        ",
+            "",
+        )
+        try:
+            r = requests.get(
+                f"{SERVER_URL}/api/v1/products/by-sku/{sku}",
+                headers={"X-API-Key": API_KEY},
+                timeout=8,
+            )
+            if r.status_code == 200:
+                prod = r.json()
+                self.selected_prod = prod
+                self.add_log(f"Produto: {prod['name']} (SKU {sku})")
+                self.num_buf = ""
+                self._go(State.ENTER_QUANTITY)
+            elif r.status_code == 404:
+                self.add_log(f"SKU '{sku}' nao encontrado")
+                self._set_lcd(
+                    "-- Cod. Produto ----",
+                    f"  '{sku[:14]}'",
+                    "  Nao encontrado!   ",
+                    "  *=apaga  Esc=vol  ",
+                )
+                time.sleep(2)
+                self._go(State.SELECT_PRODUCT)
+            else:
+                self.add_log(f"ERRO lookup produto: HTTP {r.status_code}")
+                self._go(State.SELECT_PRODUCT)
+        except Exception as e:
+            self.add_log(f"ERRO lookup produto: {e}")
+            self._go(State.SELECT_PRODUCT)
+
     def _send_movement(self):
-        op   = self.operators[self.op_idx]
-        prod = self.products[self.prod_idx]
+        op   = self.selected_op
+        prod = self.selected_prod
         payload = {
             "movement_type": "ENTRY" if self.is_entry else "EXIT",
             "operator_id":   op["id"],
@@ -387,8 +457,9 @@ class Simulator:
 _KEY_HINTS = {
     State.IDLE:            "Enter/#=iniciar",
     State.SELECT_OPERATOR: "Seta UP/A=anterior  Seta DN/B=proximo  Enter/#=ok  Esc/*=voltar",
+    State.ENTER_PIN:       "0-9=digitar PIN  *=apagar  Enter/#=confirmar  Esc/*=voltar",
     State.SELECT_TYPE:     "1=Entrada  2=Saida  Esc/*=voltar",
-    State.SELECT_PRODUCT:  "Seta UP/A=anterior  Seta DN/B=proximo  Enter/#=ok  Esc/*=voltar",
+    State.SELECT_PRODUCT:  "0-9=digitar codigo SKU  *=apagar  Enter/#=confirmar  Esc=voltar",
     State.ENTER_QUANTITY:  "0-9=digitar  *=apagar ultimo  Enter/#=ok  B=voltar produto",
     State.CONFIRM:         "Enter/#=enviar ao servidor  Esc/*=cancelar",
     State.SEND:            "Aguardando resposta do servidor...",
@@ -412,11 +483,11 @@ def run_ui(stdscr, sim: Simulator):
     if curses.has_colors():
         curses.start_color()
         curses.use_default_colors()
-        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)  # LCD texto
-        curses.init_pair(2, curses.COLOR_CYAN,  -1)                  # bordas/titulos
-        curses.init_pair(3, curses.COLOR_WHITE, -1)                  # normal
-        curses.init_pair(4, curses.COLOR_RED,   -1)                  # erro/scanner
-        curses.init_pair(5, curses.COLOR_BLACK, -1)                  # dim
+        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
+        curses.init_pair(2, curses.COLOR_CYAN,  -1)
+        curses.init_pair(3, curses.COLOR_WHITE, -1)
+        curses.init_pair(4, curses.COLOR_RED,   -1)
+        curses.init_pair(5, curses.COLOR_BLACK, -1)
 
     C_LCD = curses.color_pair(1) if curses.has_colors() else 0
     C_HDR = (curses.color_pair(2) | curses.A_BOLD) if curses.has_colors() else curses.A_BOLD
@@ -424,8 +495,6 @@ def run_ui(stdscr, sim: Simulator):
     C_ERR = (curses.color_pair(4) | curses.A_BOLD) if curses.has_colors() else curses.A_BOLD
     C_DIM = curses.color_pair(5) if curses.has_colors() else curses.A_DIM
 
-    # LCD box: LCD_ROWS linhas + 2 borda + 1 titulo = LCD_ROWS+2 rows de altura
-    # largura: LCD_COLS + 4 (2 borda + 2 padding)
     LCD_WIN_H = LCD_ROWS + 2
     LCD_WIN_W = LCD_COLS + 4
 
@@ -439,11 +508,9 @@ def run_ui(stdscr, sim: Simulator):
         h, w = stdscr.getmaxyx()
         stdscr.erase()
 
-        # ── Titulo ────────────────────────────────────────────────────────────
         title = f" ESP32 Simulator — LCD {LCD_COLS}x{LCD_ROWS} — SorvPel "
         _safe(stdscr, 0, max(0, (w - len(title)) // 2), title, C_HDR)
 
-        # ── LCD box ───────────────────────────────────────────────────────────
         lcd_row = 2
         lcd_col = max(0, (w - LCD_WIN_W) // 2)
 
@@ -457,23 +524,19 @@ def run_ui(stdscr, sim: Simulator):
                 _safe(lcd_win, r + 1, 2, line[:LCD_COLS], C_LCD)
             lcd_win.refresh()
 
-        # ── Estado + dica de teclas ───────────────────────────────────────────
         info_row = lcd_row + LCD_WIN_H + 1
         _safe(stdscr, info_row, 2, f"Estado : {sim.state.value}", C_HDR)
         hint = _KEY_HINTS.get(sim.state, "")
         _safe(stdscr, info_row + 1, 2, f"Teclas : {hint}"[:w-3], C_NRM)
 
-        # ── Scanner prompt ────────────────────────────────────────────────────
         scan_row = info_row + 2
         if scanner_mode:
             _safe(stdscr, scan_row, 2,
-                  f" [SCANNER] Codigo: {scanner_buf}_  (Enter=ok  Esc=cancela)"[:w-3],
-                  C_ERR)
+                  f" [SCANNER] Codigo: {scanner_buf}_  (Enter=ok  Esc=cancela)"[:w-3], C_ERR)
         else:
             _safe(stdscr, scan_row, 2,
                   "  S=scanner  R=recarregar dados  Q=sair", C_DIM)
 
-        # ── Divisor + Log ─────────────────────────────────────────────────────
         div = scan_row + 2
         _safe(stdscr, div, 0, "─" * max(0, w - 1), C_HDR)
         _safe(stdscr, div, 2, " Log chamadas API ", C_HDR)
@@ -488,7 +551,6 @@ def run_ui(stdscr, sim: Simulator):
 
         stdscr.refresh()
 
-        # ── Input ─────────────────────────────────────────────────────────────
         try:
             ch = stdscr.getch()
         except Exception:
@@ -513,7 +575,7 @@ def run_ui(stdscr, sim: Simulator):
         elif ch in (ord('s'), ord('S')):
             scanner_mode = True; scanner_buf = ""
         elif ch in (ord('r'), ord('R')):
-            sim.add_log("Recarregando operadores e produtos...")
+            sim.add_log("Recarregando operadores e turnos...")
             threading.Thread(target=sim.fetch_data, daemon=True).start()
         elif ch in (ord('\n'), ord('\r'), curses.KEY_ENTER, ord('#')):
             sim.handle_key('#')

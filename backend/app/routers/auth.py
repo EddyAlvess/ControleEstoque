@@ -29,7 +29,7 @@ async def login(
     )
     user = result.scalar_one_or_none()
     if not user or not verify_password(password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+        return RedirectResponse(url="/login?error=1", status_code=status.HTTP_302_FOUND)
 
     token = create_access_token(TokenData(user_id=user.id, username=user.username, role=user.role))
     resp = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)

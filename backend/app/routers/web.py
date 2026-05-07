@@ -35,11 +35,14 @@ async def root():
 
 
 @router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
+async def login_page(request: Request, error: str | None = Query(None)):
     token = request.cookies.get("access_token")
     if token and decode_access_token(token):
         return RedirectResponse(url="/dashboard")
-    resp = templates.TemplateResponse("login.html", {"request": request})
+    ctx = {"request": request}
+    if error:
+        ctx["error"] = "Usuário ou senha incorretos. Tente novamente."
+    resp = templates.TemplateResponse("login.html", ctx)
     resp.delete_cookie("access_token")
     return resp
 
@@ -179,7 +182,14 @@ async def admin_operators(
     user: WebUser = Depends(require_admin),
 ):
     operators = (await db.execute(select(Operator).order_by(Operator.name))).scalars().all()
-    return templates.TemplateResponse("admin/operators.html", _ctx(request, user, operators=operators))
+    ops_list = [
+        {
+            "id": op.id, "name": op.name, "badge_code": op.badge_code,
+            "is_active": op.is_active, "has_pin": bool(op.pin_hash),
+        }
+        for op in operators
+    ]
+    return templates.TemplateResponse("admin/operators.html", _ctx(request, user, operators=ops_list))
 
 
 @router.get("/admin/products", response_class=HTMLResponse)

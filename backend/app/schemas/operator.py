@@ -6,11 +6,13 @@ from pydantic import BaseModel
 class OperatorCreate(BaseModel):
     name: str
     badge_code: str
+    pin: str | None = None
 
 
 class OperatorUpdate(BaseModel):
     name: str | None = None
     badge_code: str | None = None
+    pin: str | None = None
     is_active: bool | None = None
 
 
@@ -22,3 +24,7 @@ class OperatorRead(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PinVerifyRequest(BaseModel):
+    pin: str

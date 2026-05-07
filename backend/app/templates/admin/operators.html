@@ -12,18 +12,37 @@
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Nome</th><th>Código (Crachá)</th><th>Status</th><th>Ações</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Código (Crachá)</th>
+          <th>PIN Terminal</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
       <tbody>
         {% for op in operators %}
         <tr>
           <td class="fw-semibold">{{ op.name }}</td>
           <td><code>{{ op.badge_code }}</code></td>
           <td>
+            {% if op.has_pin %}
+              <span class="badge bg-success"><i class="bi bi-lock-fill me-1"></i>Cadastrado</span>
+            {% else %}
+              <span class="badge bg-warning text-dark"><i class="bi bi-unlock me-1"></i>Sem PIN</span>
+            {% endif %}
+          </td>
+          <td>
             {% if op.is_active %}<span class="badge bg-success">Ativo</span>
             {% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
           </td>
-          <td>
-            <button class="btn btn-sm btn-outline-danger" onclick="toggleOp({{ op.id }}, {{ op.is_active|lower }})">
+          <td class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-primary" onclick="openEdit({{ op.id }})" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="toggleOp({{ op.id }}, {{ op.is_active|lower }})"
+                    title="{{ 'Desativar' if op.is_active else 'Ativar' }}">
               <i class="bi bi-{% if op.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
             </button>
           </td>
@@ -34,17 +53,26 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal: Novo Operador -->
 <div class="modal fade" id="addModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Novo Operador</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-3"><label class="form-label">Nome</label><input type="text" id="fName" class="form-control" required></div>
+        <div class="mb-3">
+          <label class="form-label">Nome</label>
+          <input type="text" id="fName" class="form-control" required>
+        </div>
         <div class="mb-3">
           <label class="form-label">Código do Crachá</label>
           <input type="text" id="fCode" class="form-control" required placeholder="Ex: 1001">
-          <div class="form-text">Código que o operador digitará ou escanerá no terminal ESP32</div>
+          <div class="form-text">Código digitado ou escaneado no terminal ESP32.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">PIN do Terminal <span class="text-muted small">(numérico, mín. 4 dígitos)</span></label>
+          <input type="password" id="fPin" class="form-control" placeholder="Deixe em branco para não definir"
+                 inputmode="numeric" pattern="[0-9]*">
+          <div class="form-text">Será solicitado ao operador ao iniciar movimento no terminal.</div>
         </div>
       </div>
       <div class="modal-footer">
@@ -54,15 +82,83 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Editar Operador -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Editar Operador</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="eId">
+        <div class="mb-3">
+          <label class="form-label">Nome</label>
+          <input type="text" id="eName" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Código do Crachá</label>
+          <input type="text" id="eCode" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Novo PIN <span class="text-muted small">(deixe em branco para manter o atual)</span></label>
+          <input type="password" id="ePin" class="form-control" placeholder="Novo PIN numérico"
+                 inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveEdit()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const OPERATORS = {{ operators | tojson }};
+
+function openEdit(id) {
+  const op = OPERATORS.find(o => o.id === id);
+  if (!op) return;
+  document.getElementById('eId').value   = op.id;
+  document.getElementById('eName').value = op.name;
+  document.getElementById('eCode').value = op.badge_code;
+  document.getElementById('ePin').value  = '';
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
 async function createOp() {
+  const pin = document.getElementById('fPin').value;
+  if (pin && (!/^\d+$/.test(pin) || pin.length < 4)) {
+    alert('PIN deve ser numérico e ter ao menos 4 dígitos.'); return;
+  }
+  const body = {
+    name: document.getElementById('fName').value,
+    badge_code: document.getElementById('fCode').value,
+  };
+  if (pin) body.pin = pin;
   const res = await fetch('/api/v1/operators', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({name: document.getElementById('fName').value, badge_code: document.getElementById('fCode').value})
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (res.ok) location.reload();
+  else alert('Erro: ' + (await res.json()).detail);
+}
+
+async function saveEdit() {
+  const id  = document.getElementById('eId').value;
+  const pin = document.getElementById('ePin').value;
+  if (pin && (!/^\d+$/.test(pin) || pin.length < 4)) {
+    alert('PIN deve ser numérico e ter ao menos 4 dígitos.'); return;
+  }
+  const body = {
+    name: document.getElementById('eName').value,
+    badge_code: document.getElementById('eCode').value,
+  };
+  if (pin) body.pin = pin;
+  const res = await fetch(`/api/v1/operators/${id}`, {
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
   });
   if (res.ok) location.reload();
   else alert('Erro: ' + (await res.json()).detail);
@@ -70,9 +166,8 @@ async function createOp() {
 
 async function toggleOp(id, isActive) {
   const res = await fetch(`/api/v1/operators/${id}`, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({is_active: !isActive})
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({is_active: !isActive}),
   });
   if (res.ok) location.reload();
 }

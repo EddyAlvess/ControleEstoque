@@ -38,6 +38,27 @@ async def list_products(
     ]
 
 
+@router.get("/by-sku/{sku}", response_model=ProductReadFull)
+async def get_product_by_sku(
+    sku: str,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_user_or_esp32),
+):
+    """Busca um produto pelo SKU — usado pelo terminal ESP32 para lookup por código."""
+    row = (await db.execute(
+        select(Product, Category.name.label("category_name"))
+        .outerjoin(Category, Product.category_id == Category.id)
+        .where(Product.sku == sku, Product.is_active == True)
+    )).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    return ProductReadFull(
+        id=row[0].id, sku=row[0].sku, name=row[0].name, unit=row[0].unit,
+        category_id=row[0].category_id, is_active=row[0].is_active,
+        created_at=row[0].created_at, category_name=row[1],
+    )
+
+
 @router.post("", response_model=ProductRead, status_code=status.HTTP_201_CREATED)
 async def create_product(
     data: ProductCreate,
