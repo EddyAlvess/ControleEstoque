@@ -12,7 +12,7 @@
 <!-- Filtros -->
 <div class="card mb-3">
   <div class="card-body py-2">
-    <form method="get" id="filterForm">
+    <form id="filterForm">
       <div class="row g-2">
         <div class="col-sm-2">
           <label class="form-label small mb-1">Tipo</label>
@@ -83,7 +83,6 @@
           </button>
         </div>
       </div>
-      <input type="hidden" name="page" value="1">
     </form>
   </div>
 </div>
@@ -154,7 +153,7 @@
 
   {% if pages > 1 %}
   <div class="card-footer bg-white py-2">
-    <nav aria-label="Paginação">
+    <nav>
       <ul class="pagination pagination-sm mb-0 justify-content-center flex-wrap gap-1">
         {% if page > 1 %}
         <li class="page-item">
@@ -202,6 +201,18 @@ const allProducts = [
 ];
 const initProductId = {{ filters.product_id or 'null' }};
 
+/* Remove empty-string values before submitting so FastAPI doesn't
+   receive "" for integer query params and raise a parse error. */
+document.getElementById('filterForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const params = new URLSearchParams();
+  new FormData(this).forEach((v, k) => {
+    if (v !== '') params.append(k, v);
+  });
+  params.set('page', '1');
+  window.location = '/reports?' + params.toString();
+});
+
 function filterProducts() {
   const catId = parseInt(document.getElementById('catFilter').value) || null;
   const sel = document.getElementById('prodFilter');
@@ -221,10 +232,13 @@ function exportCsv() {
   const params = new URLSearchParams(window.location.search);
   params.delete('page');
   params.delete('page_size');
+  /* Strip empty values that would break integer params on the export endpoint */
+  for (const [k, v] of [...params.entries()]) {
+    if (v === '') params.delete(k);
+  }
   window.open('/api/v1/reports/export?' + params.toString());
 }
 
-// Initialize product dropdown on page load
 filterProducts();
 if (initProductId) document.getElementById('prodFilter').value = initProductId;
 </script>

@@ -213,7 +213,8 @@ async def admin_categories(
     user: WebUser = Depends(require_admin),
 ):
     cats = (await db.execute(select(Category).order_by(Category.name))).scalars().all()
-    return templates.TemplateResponse("admin/categories.html", _ctx(request, user, categories=cats))
+    cats_list = [{"id": c.id, "name": c.name, "is_active": c.is_active} for c in cats]
+    return templates.TemplateResponse("admin/categories.html", _ctx(request, user, categories=cats_list))
 
 
 @router.get("/admin/shifts", response_class=HTMLResponse)
@@ -223,4 +224,9 @@ async def admin_shifts(
     user: WebUser = Depends(require_admin),
 ):
     shifts = (await db.execute(select(Shift).order_by(Shift.start_hour))).scalars().all()
-    return templates.TemplateResponse("admin/shifts.html", _ctx(request, user, shifts=shifts))
+    shifts_list = [
+        {"id": s.id, "name": s.name, "label": s.label,
+         "start_hour": s.start_hour, "end_hour": s.end_hour, "is_active": s.is_active}
+        for s in shifts
+    ]
+    return templates.TemplateResponse("admin/shifts.html", _ctx(request, user, shifts=shifts_list))

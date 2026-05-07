@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import require_admin, require_user_or_esp32
 from app.models.category import Category
+from app.models.product import Product
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
@@ -68,5 +69,6 @@ async def delete_category(
     cat = result.scalar_one_or_none()
     if not cat:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    await db.execute(update(Product).where(Product.category_id == cat_id).values(category_id=None))
     await db.delete(cat)
     await db.commit()

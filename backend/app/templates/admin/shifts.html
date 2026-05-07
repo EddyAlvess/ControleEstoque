@@ -17,13 +17,7 @@
     <table class="table table-hover mb-0">
       <thead>
         <tr>
-          <th>Nome</th>
-          <th>Rótulo</th>
-          <th>Início</th>
-          <th>Fim</th>
-          <th>Cobertura</th>
-          <th>Status</th>
-          <th>Ações</th>
+          <th>Nome</th><th>Rótulo</th><th>Início</th><th>Fim</th><th>Cobertura</th><th>Status</th><th>Ações</th>
         </tr>
       </thead>
       <tbody>
@@ -48,12 +42,10 @@
             {% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}
           </td>
           <td class="d-flex gap-1">
-            <button class="btn btn-sm btn-outline-primary"
-              onclick="openEdit({{ s.id }}, '{{ s.label }}', {{ s.start_hour }}, {{ s.end_hour }}, {{ s.is_active|lower }})">
+            <button class="btn btn-sm btn-outline-primary" onclick="openEdit({{ s.id }})">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger"
-              onclick="deleteShift({{ s.id }}, '{{ s.label }}')">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteShift({{ s.id }})">
               <i class="bi bi-trash"></i>
             </button>
           </td>
@@ -156,6 +148,8 @@
 
 {% block scripts %}
 <script>
+const SHIFTS = {{ shifts | tojson }};
+
 async function createShift() {
   const body = {
     name:       document.getElementById('fName').value.trim(),
@@ -175,12 +169,14 @@ async function createShift() {
   else alert('Erro: ' + (await res.json()).detail);
 }
 
-function openEdit(id, label, start, end, active) {
-  document.getElementById('eId').value    = id;
-  document.getElementById('eLabel').value = label;
-  document.getElementById('eStart').value = start;
-  document.getElementById('eEnd').value   = end;
-  document.getElementById('eActive').checked = active;
+function openEdit(id) {
+  const s = SHIFTS.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('eId').value    = s.id;
+  document.getElementById('eLabel').value = s.label;
+  document.getElementById('eStart').value = s.start_hour;
+  document.getElementById('eEnd').value   = s.end_hour;
+  document.getElementById('eActive').checked = s.is_active;
   new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 
@@ -201,8 +197,9 @@ async function saveEdit() {
   else alert('Erro: ' + (await res.json()).detail);
 }
 
-async function deleteShift(id, label) {
-  if (!confirm(`Excluir o turno "${label}"?\n\nRegistros já gravados não serão afetados.`)) return;
+async function deleteShift(id) {
+  const s = SHIFTS.find(x => x.id === id);
+  if (!confirm(`Excluir o turno "${s ? s.label : id}"?\n\nRegistros já gravados não serão afetados.`)) return;
   const res = await fetch(`/api/v1/shifts/${id}`, { method: 'DELETE' });
   if (res.ok) location.reload();
   else alert('Erro ao excluir.');

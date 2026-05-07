@@ -27,18 +27,14 @@
             {% else %}<span class="badge bg-secondary">Inativa</span>{% endif %}
           </td>
           <td class="d-flex gap-1">
-            <button class="btn btn-sm btn-outline-primary"
-              onclick="openEdit({{ c.id }}, '{{ c.name | replace("'", "\\'") }}', {{ c.is_active | lower }})">
+            <button class="btn btn-sm btn-outline-primary" onclick="openEdit({{ c.id }})">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger"
-              onclick="deleteCategory({{ c.id }}, '{{ c.name | replace("'", "\\'") }}')">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory({{ c.id }})">
               <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>
-        {% else %}
-        <tr><td colspan="3" class="text-center text-muted py-4">Nenhuma categoria cadastrada.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -97,6 +93,8 @@
 
 {% block scripts %}
 <script>
+const CATEGORIES = {{ categories | tojson }};
+
 async function createCategory() {
   const name = document.getElementById('fName').value.trim();
   if (!name) { alert('Nome é obrigatório.'); return; }
@@ -109,10 +107,12 @@ async function createCategory() {
   else alert('Erro: ' + (await res.json()).detail);
 }
 
-function openEdit(id, name, isActive) {
-  document.getElementById('eId').value = id;
-  document.getElementById('eName').value = name;
-  document.getElementById('eActive').checked = isActive;
+function openEdit(id) {
+  const c = CATEGORIES.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('eId').value = c.id;
+  document.getElementById('eName').value = c.name;
+  document.getElementById('eActive').checked = c.is_active;
   new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 
@@ -129,8 +129,9 @@ async function saveEdit() {
   else alert('Erro: ' + (await res.json()).detail);
 }
 
-async function deleteCategory(id, name) {
-  if (!confirm(`Excluir a categoria "${name}"?\n\nOs produtos desta categoria perderão a vinculação.`)) return;
+async function deleteCategory(id) {
+  const c = CATEGORIES.find(x => x.id === id);
+  if (!confirm(`Excluir a categoria "${c ? c.name : id}"?\n\nOs produtos desta categoria perderão a vinculação.`)) return;
   const res = await fetch(`/api/v1/categories/${id}`, { method: 'DELETE' });
   if (res.ok) location.reload();
   else alert('Erro ao excluir.');
