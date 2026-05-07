@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manual do Sistema — SorvPel Controle de Estoque</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy:  #1a1a2e; --red: #e94560; --green: #198754;
+    --blue:  #0d6efd; --gray: #6c757d; --light: #f8f9fa;
+    --border: #dee2e6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body { font-family: 'Inter', sans-serif; color: #212529; background: #fff; line-height: 1.65; }
+
+  /* Print */
+  @media print {
+    .no-print { display: none !important; }
+    .page-break { page-break-before: always; }
+    body { font-size: 11pt; }
+    pre, code { font-size: 9pt; }
+    h1 { font-size: 20pt; } h2 { font-size: 15pt; } h3 { font-size: 12pt; }
+    a { text-decoration: none; color: inherit; }
+  }
+
+  /* Cover */
+  .cover {
+    background: var(--navy); color: #fff;
+    min-height: 100vh; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center;
+    padding: 60px 40px;
+  }
+  .cover-logo { font-size: 72px; margin-bottom: 20px; }
+  .cover h1 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+  .cover .sub { font-size: 18px; color: #adb5bd; margin-bottom: 40px; }
+  .cover-badge {
+    background: var(--red); color: #fff; padding: 4px 16px;
+    border-radius: 20px; font-size: 13px; font-weight: 500; display: inline-block; margin-bottom: 60px;
+  }
+  .cover-meta { color: #6c757d; font-size: 13px; line-height: 2; }
+
+  /* Layout */
+  .container { max-width: 860px; margin: 0 auto; padding: 40px 30px; }
+  .toc { background: var(--light); border-left: 4px solid var(--red); padding: 24px 30px; border-radius: 6px; margin-bottom: 48px; }
+  .toc h2 { font-size: 16px; color: var(--navy); margin-bottom: 14px; }
+  .toc ol { padding-left: 18px; }
+  .toc li { padding: 3px 0; }
+  .toc a { color: var(--blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  h1 { font-size: 28px; font-weight: 700; color: var(--navy); border-bottom: 3px solid var(--red); padding-bottom: 10px; margin: 48px 0 24px; }
+  h2 { font-size: 20px; font-weight: 600; color: var(--navy); margin: 36px 0 14px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; color: #343a40; margin: 24px 0 10px; }
+  h4 { font-size: 14px; font-weight: 600; color: var(--gray); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .05em; }
+  p  { margin-bottom: 12px; }
+  ul, ol { padding-left: 22px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+
+  code { font-family: 'JetBrains Mono', monospace; background: #f0f2f5; padding: 1px 5px; border-radius: 3px; font-size: .88em; color: #c0392b; }
+  pre  { background: var(--navy); color: #abb2bf; padding: 18px 20px; border-radius: 8px; overflow-x: auto; margin: 14px 0 18px; font-size: .85em; line-height: 1.55; }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  .callout { border-left: 4px solid; border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 14px 0; }
+  .callout-info    { border-color: var(--blue);  background: #e7f1ff; }
+  .callout-warn    { border-color: #f59e0b; background: #fffbeb; }
+  .callout-danger  { border-color: var(--red);   background: #fef2f2; }
+  .callout-success { border-color: var(--green); background: #f0fdf4; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: .92em; }
+  th { background: var(--navy); color: #fff; padding: 8px 12px; text-align: left; font-weight: 500; }
+  td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--light); }
+
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: .78em; font-weight: 500; }
+  .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-red   { background: #fee2e2; color: #b91c1c; }
+  .badge-gray  { background: #f3f4f6; color: #374151; }
+
+  .step { display: flex; gap: 14px; margin-bottom: 18px; }
+  .step-num { width: 32px; height: 32px; background: var(--red); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 14px; }
+  .step-body { flex: 1; padding-top: 5px; }
+
+  .screen { background: #1a1a2e; color: #a8ff78; font-family: 'JetBrains Mono', monospace; font-size: .83em; padding: 14px 18px; border-radius: 8px; margin: 10px 0 16px; line-height: 1.8; border: 2px solid #2d2d4e; }
+  .screen .cursor { animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .key { display: inline-block; background: #343a40; color: #fff; padding: 1px 8px; border-radius: 4px; font-family: monospace; font-size: .85em; border-bottom: 2px solid #000; }
+
+  hr.section { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  footer { text-align: center; color: var(--gray); font-size: .82em; padding: 30px; border-top: 1px solid var(--border); margin-top: 60px; }
+</style>
+</head>
+<body>
+
+<!-- ══ CAPA ══════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">🍦</div>
+  <h1>SorvPel</h1>
+  <div class="sub">Sistema de Controle de Estoque</div>
+  <div class="cover-badge">Manual do Sistema — v1.0</div>
+  <div class="cover-meta">
+    Versão 1.0 &nbsp;|&nbsp; 2026<br>
+    Portal Web + Terminal ESP32<br>
+    Uso Interno — SorvPel Sorvetes
+  </div>
+</div>
+
+<!-- ══ CONTEÚDO ══════════════════════════════════════════════════════════════ -->
+<div class="container">
+
+<!-- Sumário -->
+<div class="toc">
+  <h2>📋 Sumário</h2>
+  <ol>
+    <li><a href="#apresentacao">Apresentação do Sistema</a></li>
+    <li><a href="#arquitetura">Arquitetura</a></li>
+    <li><a href="#prereqs">Pré-requisitos</a></li>
+    <li><a href="#instalacao-servidor">Instalação do Servidor</a></li>
+    <li><a href="#instalacao-esp32">Instalação do Terminal ESP32</a></li>
+    <li><a href="#primeiro-acesso">Primeiro Acesso e Configuração Inicial</a></li>
+    <li><a href="#portal-web">Operação — Portal Web</a></li>
+    <li><a href="#terminal-esp32">Operação — Terminal ESP32</a></li>
+    <li><a href="#manutencao">Manutenção</a></li>
+    <li><a href="#referencia">Referência Rápida</a></li>
+  </ol>
+</div>
+
+<!-- ══ 1. APRESENTAÇÃO ═══════════════════════════════════════════════════════ -->
+<h1 id="apresentacao">1. Apresentação do Sistema</h1>
+
+<p>O <strong>SorvPel Controle de Estoque</strong> é um sistema completo para registro e acompanhamento de entradas e saídas de insumos e produtos em fábricas de sorvetes e açaí. O sistema é composto por dois módulos principais:</p>
+
+<ul>
+  <li><strong>Portal Web</strong> — interface de gerenciamento acessada via navegador, com dashboard, relatórios, exportação CSV e área administrativa.</li>
+  <li><strong>Terminal ESP32</strong> — dispositivo físico instalado no chão de fábrica; os operadores registram movimentos de estoque diretamente pelo teclado matricial, sem precisar de computador.</li>
+</ul>
+
+<h2>Funcionalidades Principais</h2>
+<table>
+  <tr><th>Funcionalidade</th><th>Descrição</th></tr>
+  <tr><td>Registro de movimentos</td><td>Entradas e saídas por produto, operador e turno</td></tr>
+  <tr><td>Dashboard em tempo real</td><td>KPIs do dia, estoque por categoria (drilldown), gráfico e últimos registros</td></tr>
+  <tr><td>Relatórios com filtros</td><td>Filtros por data/hora, operador, categoria, produto, turno; paginação; export CSV</td></tr>
+  <tr><td>Gestão de operadores</td><td>Cadastro com crachá e PIN de acesso ao terminal</td></tr>
+  <tr><td>Gestão de produtos</td><td>SKU numérico, nome, unidade, categoria</td></tr>
+  <tr><td>Gestão de turnos</td><td>Turnos dinâmicos com detecção automática por hora</td></tr>
+  <tr><td>Múltiplos usuários web</td><td>Perfis admin e usuário comum</td></tr>
+  <tr><td>Atualização OTA</td><td>Firmware ESP32 atualizado via rede sem fio</td></tr>
+</table>
+
+<!-- ══ 2. ARQUITETURA ════════════════════════════════════════════════════════ -->
+<h1 id="arquitetura">2. Arquitetura</h1>
+
+<pre>
+┌─────────────────────────────────────────────────────┐
+│                SERVIDOR (Docker)                    │
+│                                                     │
+│  Nginx (:80/8080)  ←──── Navegador (Portal Web)    │
+│      │                                              │
+│  FastAPI Backend                                    │
+│      │                                              │
+│  PostgreSQL 16                                      │
+└─────────────────────────────────────────────────────┘
+        ↑
+        │ HTTP/REST (X-API-Key)
+        │
+┌───────────────────┐
+│  Terminal ESP32   │
+│  - Teclado 4x4    │
+│  - LCD 20x4 I2C   │
+│  - WiFi           │
+└───────────────────┘
+</pre>
+
+<table>
+  <tr><th>Componente</th><th>Tecnologia</th></tr>
+  <tr><td>Servidor web</td><td>Nginx (proxy reverso)</td></tr>
+  <tr><td>API/Backend</td><td>FastAPI + Python 3.12 (async)</td></tr>
+  <tr><td>Banco de dados</td><td>PostgreSQL 16</td></tr>
+  <tr><td>ORM / migrações</td><td>SQLAlchemy async + Alembic</td></tr>
+  <tr><td>Interface web</td><td>Jinja2 + Bootstrap 5.3 + Chart.js</td></tr>
+  <tr><td>Containerização</td><td>Docker Compose</td></tr>
+  <tr><td>Firmware terminal</td><td>Arduino / PlatformIO (C++)</td></tr>
+  <tr><td>Simulador terminal</td><td>Python 3 curses (para testes)</td></tr>
+</table>
+
+<!-- ══ 3. PRÉ-REQUISITOS ═════════════════════════════════════════════════════ -->
+<h1 id="prereqs">3. Pré-requisitos</h1>
+
+<h2>3.1 Servidor</h2>
+<h3>Hardware mínimo</h3>
+<table>
+  <tr><th>Componente</th><th>Mínimo</th><th>Recomendado</th></tr>
+  <tr><td>CPU</td><td>2 núcleos 64-bit</td><td>4 núcleos</td></tr>
+  <tr><td>RAM</td><td>2 GB</td><td>4 GB</td></tr>
+  <tr><td>Armazenamento</td><td>10 GB livres</td><td>20 GB</td></tr>
+  <tr><td>Rede</td><td>LAN 100 Mbps</td><td>Gigabit</td></tr>
+</table>
+
+<h3>Software</h3>
+<table>
+  <tr><th>Software</th><th>Windows</th><th>Linux</th></tr>
+  <tr><td>Sistema operacional</td><td>Windows 10/11 (64-bit)</td><td>Ubuntu 20.04+ / Debian 11+ / CentOS 8+</td></tr>
+  <tr><td>Docker</td><td>Docker Desktop 4.0+</td><td>Docker Engine 24+ + Compose plugin</td></tr>
+  <tr><td>Navegador</td><td colspan="2">Chrome, Edge, Firefox (versão recente)</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>ℹ️ Docker Desktop (Windows)</strong>
+  Baixe em <strong>docker.com/products/docker-desktop</strong>. Requer WSL 2 habilitado ou Hyper-V. Reinicie após a instalação.
+</div>
+
+<h2>3.2 Terminal ESP32</h2>
+<h3>Hardware necessário</h3>
+<table>
+  <tr><th>Componente</th><th>Especificação</th></tr>
+  <tr><td>Microcontrolador</td><td>ESP32 DevKit (qualquer variante com WiFi)</td></tr>
+  <tr><td>Display</td><td>LCD 20×4 caracteres com interface I2C (addr 0x27)</td></tr>
+  <tr><td>Teclado</td><td>Matricial 4×4 (16 teclas: 0-9, A-D, *, #)</td></tr>
+  <tr><td>Alimentação</td><td>5V via USB ou fonte externa</td></tr>
+  <tr><td>Rede</td><td>WiFi 2.4 GHz (mesma rede do servidor)</td></tr>
+  <tr><td>Cabo instalação</td><td>USB-A para micro-USB ou USB-C (conforme modelo)</td></tr>
+</table>
+
+<h3>Software para gravação do firmware</h3>
+<ul>
+  <li>Python 3.8+ com pip</li>
+  <li>PlatformIO CLI (<code>pip install platformio</code>) <em>ou</em> VS Code com extensão PlatformIO</li>
+  <li>Driver USB: CH340 (clone) ou CP2102 (original)</li>
+</ul>
+
+<div class="callout callout-warn">
+  <strong>⚠️ Driver CH340 (Windows)</strong>
+  Se o ESP32 não aparecer como porta COM, instale o driver CH340G em <strong>wch.cn</strong> ou pesquise "CH340 driver download".
+</div>
+
+<!-- ══ 4. INSTALAÇÃO DO SERVIDOR ════════════════════════════════════════════ -->
+<h1 id="instalacao-servidor">4. Instalação do Servidor</h1>
+
+<h2>4.1 Windows — Instalador Automático (recomendado)</h2>
+
+<div class="step"><div class="step-num">1</div><div class="step-body">
+  Baixe ou clone o repositório do projeto.
+  <pre><code>git clone https://github.com/EddyAlvess/ControleEstoque.git
+cd ControleEstoque</code></pre>
+</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-body">
+  Instale o Docker Desktop e certifique-se de que ele está <strong>em execução</strong> (ícone na bandeja do sistema).
+</div></div>
+
+<div class="step"><div class="step-num">3</div><div class="step-body">
+  Execute o instalador com botão direito → <strong>"Executar com PowerShell"</strong>:
+  <pre><code>install\windows\SorvPel_Setup.ps1</code></pre>
+  O assistente irá guiá-lo pelos passos de configuração (porta, senhas, chave API) e instalação automática.
+</div></div>
+
+<div class="step"><div class="step-num">4</div><div class="step-body">
+  Ao concluir, clique em <strong>"Abrir no Navegador"</strong> para acessar o portal.
+</div></div>
+
+<h2>4.2 Linux — Instalador Automático</h2>
+
+<div class="step"><div class="step-num">1</div><div class="step-body">
+  Clone o repositório:
+  <pre><code>git clone https://github.com/EddyAlvess/ControleEstoque.git
+cd ControleEstoque</code></pre>
+</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-body">
+  Execute o instalador como root:
+  <pre><code>chmod +x install/linux/install.sh
+sudo bash install/linux/install.sh</code></pre>
+  O script detecta a distribuição, instala o Docker se necessário, configura as senhas e sobe os serviços.
+</div></div>
+
+<h2>4.3 Configuração Manual (avançado)</h2>
+
+<p>Se preferir configurar manualmente, copie o arquivo de exemplo e edite:</p>
+
+<pre><code>cp .env.example .env
+nano .env   # ou notepad .env no Windows</code></pre>
+
+<h3>Variáveis do arquivo .env</h3>
+<table>
+  <tr><th>Variável</th><th>Descrição</th><th>Exemplo</th></tr>
+  <tr><td><code>POSTGRES_PASSWORD</code></td><td>Senha do banco de dados</td><td>senha_segura_123</td></tr>
+  <tr><td><code>SECRET_KEY</code></td><td>Chave JWT (string aleatória 64 hex)</td><td>a1b2c3…</td></tr>
+  <tr><td><code>ESP32_API_KEY</code></td><td>Chave de autenticação dos terminais</td><td>esp32-key-2024</td></tr>
+  <tr><td><code>NGINX_PORT</code></td><td>Porta HTTP pública</td><td>8080</td></tr>
+  <tr><td><code>ACCESS_TOKEN_EXPIRE_MINUTES</code></td><td>Expiração da sessão web (minutos)</td><td>480 (8h)</td></tr>
+</table>
+
+<pre><code># Após editar o .env, suba os serviços:
+docker compose up -d
+
+# Execute as migrações do banco:
+docker compose run --rm backend alembic upgrade head</code></pre>
+
+<!-- ══ 5. INSTALAÇÃO ESP32 ════════════════════════════════════════════════════ -->
+<h1 id="instalacao-esp32">5. Instalação do Terminal ESP32</h1>
+
+<h2>5.1 Conexão de Hardware</h2>
+
+<table>
+  <tr><th>Componente</th><th>Pino ESP32</th><th>Obs.</th></tr>
+  <tr><td>LCD SDA</td><td>GPIO 21</td><td>I2C Data</td></tr>
+  <tr><td>LCD SCL</td><td>GPIO 22</td><td>I2C Clock</td></tr>
+  <tr><td>Teclado Linha 1-4</td><td>GPIO 13, 12, 14, 27</td><td>Pull-up interno</td></tr>
+  <tr><td>Teclado Coluna 1-4</td><td>GPIO 26, 25, 33, 32</td><td></td></tr>
+  <tr><td>Scanner (opcional) RX</td><td>GPIO 16</td><td>Serial2</td></tr>
+  <tr><td>Scanner (opcional) TX</td><td>GPIO 17</td><td>Serial2</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>ℹ️ Endereço I2C</strong>
+  O endereço padrão do LCD I2C é <code>0x27</code>. Caso seu display seja diferente (ex: <code>0x3F</code>), ajuste <code>LCD_I2C_ADDR</code> no <code>config.h</code>.
+</div>
+
+<h2>5.2 Gravação do Firmware — Windows</h2>
+
+<div class="step"><div class="step-num">1</div><div class="step-body">Conecte o ESP32 ao computador via cabo USB.</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-body">
+  Execute o gravador:
+  <pre><code>install\esp32\flash_windows.ps1</code></pre>
+  A janela detectará a porta COM automaticamente.
+</div></div>
+
+<div class="step"><div class="step-num">3</div><div class="step-body">
+  Preencha os campos: SSID, senha WiFi, URL do servidor, Chave API ESP32 e ID do terminal.
+</div></div>
+
+<div class="step"><div class="step-num">4</div><div class="step-body">Clique em <strong>▶ Gravar Firmware</strong>. Aguarde ~1 minuto.</div></div>
+
+<h2>5.3 Gravação do Firmware — Linux</h2>
+
+<pre><code>chmod +x install/esp32/flash_linux.sh
+./install/esp32/flash_linux.sh</code></pre>
+
+<p>O script detecta a porta USB automaticamente (<code>/dev/ttyUSB0</code> ou <code>/dev/ttyACM0</code>), solicita as configurações e grava o firmware.</p>
+
+<h2>5.4 Verificação Pós-gravação</h2>
+
+<p>Após a gravação, o ESP32 exibirá no LCD:</p>
+<div class="screen">
+  Conectando WiFi...<br>
+  SSID: SuaRede<br>
+  <br>
+  Aguarde...
+</div>
+<p>Se a conexão for bem-sucedida:</p>
+<div class="screen">
+  SorvPel Estoque<br>
+  --------------------<br>
+  &nbsp;&nbsp;&nbsp;Pressione # para<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;iniciar
+</div>
+
+<div class="callout callout-danger">
+  <strong>⚠️ Problema de conexão WiFi</strong>
+  Verifique se o SSID e senha foram digitados corretamente. O ESP32 suporta apenas redes 2.4 GHz (não 5 GHz). Certifique-se de que o servidor está acessível pela rede local.
+</div>
+
+<!-- ══ 6. PRIMEIRO ACESSO ═════════════════════════════════════════════════════ -->
+<h1 id="primeiro-acesso">6. Primeiro Acesso e Configuração Inicial</h1>
+
+<div class="step"><div class="step-num">1</div><div class="step-body">
+  Abra o navegador e acesse <code>http://&lt;IP-DO-SERVIDOR&gt;:&lt;PORTA&gt;</code><br>
+  (ex: <code>http://192.168.1.100:8080</code> ou <code>http://localhost:8080</code>)
+</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-body">
+  Faça login com as credenciais padrão:<br>
+  <strong>Usuário:</strong> <code>admin</code> &nbsp;|&nbsp; <strong>Senha:</strong> (definida durante a instalação)
+</div></div>
+
+<div class="step"><div class="step-num">3</div><div class="step-body">
+  Altere imediatamente a senha padrão: clique no ícone 🔑 no rodapé do menu lateral.
+</div></div>
+
+<div class="step"><div class="step-num">4</div><div class="step-body">
+  Configure os dados básicos na ordem sugerida:
+  <ol>
+    <li>Admin → <strong>Categorias</strong>: crie as categorias de produtos (ex: Açaí, Sorvete, Picolé)</li>
+    <li>Admin → <strong>Produtos</strong>: cadastre os produtos com código SKU <strong>numérico</strong></li>
+    <li>Admin → <strong>Operadores</strong>: cadastre os operadores com crachá e PIN</li>
+    <li>Admin → <strong>Turnos</strong>: configure os turnos de trabalho (hora início/fim)</li>
+    <li>Admin → <strong>Usuários Web</strong>: crie contas para supervisores/gestores</li>
+  </ol>
+</div></div>
+
+<div class="callout callout-warn">
+  <strong>⚠️ SKU numérico obrigatório</strong>
+  O teclado matricial do ESP32 possui apenas teclas numéricas (0-9). Os códigos SKU dos produtos devem ser configurados como números (ex: 1, 2, 101, 202) para que os operadores possam localizá-los no terminal.
+</div>
+
+<!-- ══ 7. PORTAL WEB ═════════════════════════════════════════════════════════ -->
+<h1 id="portal-web">7. Operação — Portal Web</h1>
+
+<h2>7.1 Dashboard</h2>
+<p>O dashboard exibe uma visão consolidada da operação do dia:</p>
+<table>
+  <tr><th>Seção</th><th>Descrição</th></tr>
+  <tr><td>KPIs do Dia</td><td>Total de entradas, saídas e saldo líquido do dia corrente</td></tr>
+  <tr><td>Estoque por Categoria</td><td>Cards com saldo acumulado por categoria; clique para ver detalhamento por produto</td></tr>
+  <tr><td>Gráfico de Hoje</td><td>Barras comparando entradas x saídas por produto no dia</td></tr>
+  <tr><td>Últimos Registros</td><td>Os 10 movimentos mais recentes</td></tr>
+</table>
+
+<h2>7.2 Relatórios</h2>
+<p>Acesse em <strong>Relatórios</strong> no menu lateral. Filtros disponíveis:</p>
+<ul>
+  <li><strong>Tipo:</strong> Entrada, Saída ou todos</li>
+  <li><strong>De / Até:</strong> filtro por data e hora (datetime)</li>
+  <li><strong>Turno:</strong> filtra pelo turno de trabalho</li>
+  <li><strong>Operador:</strong> filtra por operador específico</li>
+  <li><strong>Categoria + Produto:</strong> produto sensitizado pela categoria selecionada</li>
+  <li><strong>Itens por página:</strong> 10, 50, 100 ou 500 registros</li>
+</ul>
+<p>Use <strong>"Filtrar"</strong> para aplicar os filtros e <strong>"✕"</strong> para limpar. Clique em <strong>"Exportar CSV"</strong> para baixar os dados filtrados.</p>
+
+<h2>7.3 Administração</h2>
+
+<h3>Usuários Web</h3>
+<p>Gerencia contas de acesso ao portal. Perfis disponíveis:</p>
+<ul>
+  <li><span class="badge badge-red">admin</span> — acesso total: dashboard, relatórios e toda a administração</li>
+  <li><span class="badge badge-gray">user</span> — acesso ao dashboard e relatórios apenas</li>
+</ul>
+
+<h3>Operadores</h3>
+<p>Funcionários que operam os terminais ESP32:</p>
+<ul>
+  <li><strong>Nome:</strong> nome completo do operador</li>
+  <li><strong>Código do Crachá:</strong> código digitado/escaneado para selecionar o operador na lista do terminal</li>
+  <li><strong>PIN do Terminal:</strong> senha numérica (mín. 4 dígitos) exigida após selecionar o operador. Badge <span class="badge badge-green">Cadastrado</span> ou <span class="badge badge-red">Sem PIN</span></li>
+</ul>
+
+<h3>Produtos</h3>
+<ul>
+  <li><strong>SKU:</strong> código numérico único do produto (digitado no terminal)</li>
+  <li><strong>Nome:</strong> descrição do produto</li>
+  <li><strong>Unidade:</strong> unidade de medida (L, kg, un, cx…)</li>
+  <li><strong>Categoria:</strong> agrupamento para filtros e dashboard</li>
+</ul>
+
+<h3>Categorias</h3>
+<p>Agrupamentos de produtos (ex: Açaí, Sorvete, Picolé, Outros). Excluir uma categoria desvincula os produtos sem apagá-los.</p>
+
+<h3>Turnos</h3>
+<p>Turnos de trabalho com hora de início e fim. A detecção é automática: ao registrar um movimento, o servidor verifica o horário e associa o turno correto.</p>
+<div class="callout callout-info">
+  <strong>Turnos com virada de meia-noite</strong>
+  Configure <code>início: 22:00</code> e <code>fim: 06:00</code> para turnos noturnos que cruzam a meia-noite.
+</div>
+
+<h2>7.4 Alterar Senha (usuário)</h2>
+<p>Qualquer usuário pode alterar sua própria senha clicando no ícone 🔑 no rodapé do menu lateral (ao lado do nome do usuário). Informe a senha atual e a nova senha (mínimo 6 caracteres).</p>
+
+<!-- ══ 8. TERMINAL ESP32 ══════════════════════════════════════════════════════ -->
+<h1 id="terminal-esp32">8. Operação — Terminal ESP32</h1>
+
+<h2>8.1 Fluxo de Registro de Movimento</h2>
+
+<div class="step"><div class="step-num">1</div><div class="step-body">
+  <strong>Tela inicial</strong> — Pressione <span class="key">#</span> para iniciar.
+  <div class="screen">  SorvPel Estoque<br>--------------------<br>&nbsp;&nbsp;&nbsp;Pressione # para<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;iniciar</div>
+</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-body">
+  <strong>Selecionar Operador</strong> — Navegue com <span class="key">A</span> (↑) e <span class="key">B</span> (↓). Confirme com <span class="key">#</span>.
+  <div class="screen">- Selec. Operador --<br>&gt; João Silva<br>&nbsp;&nbsp;Maria Santos<br>&nbsp;&nbsp;Pedro Lima</div>
+</div></div>
+
+<div class="step"><div class="step-num">3</div><div class="step-body">
+  <strong>Digitar PIN</strong> — Digite o PIN numérico e pressione <span class="key">#</span>. Use <span class="key">*</span> para apagar o último dígito.
+  <div class="screen">--- Senha Operador -<br>Op: João Silva<br>PIN: ****<br>#=ok  *=apaga  Esc=vol</div>
+</div></div>
+
+<div class="step"><div class="step-num">4</div><div class="step-body">
+  <strong>Tipo de Movimento</strong> — Pressione <span class="key">1</span> para Entrada ou <span class="key">2</span> para Saída.
+  <div class="screen">-- Tipo Movimento --<br><br>&nbsp;&nbsp;[1] Entrada<br>&nbsp;&nbsp;[2] Saida  *=volta</div>
+</div></div>
+
+<div class="step"><div class="step-num">5</div><div class="step-body">
+  <strong>Código do Produto</strong> — Digite o SKU numérico do produto e pressione <span class="key">#</span>.
+  <div class="screen">-Entrada: Cod Produto-<br>Digite: 101<br><br>#=ok  *=apaga  Esc=vol</div>
+</div></div>
+
+<div class="step"><div class="step-num">6</div><div class="step-body">
+  <strong>Quantidade</strong> — Digite a quantidade e pressione <span class="key">#</span>.
+  <div class="screen">Entrada: Açaí 1L<br>Op: João Silva<br>Qtd: 50 L<br>#=ok  *=apaga  B=vol</div>
+</div></div>
+
+<div class="step"><div class="step-num">7</div><div class="step-body">
+  <strong>Confirmar</strong> — Revise e pressione <span class="key">#</span> para enviar ou <span class="key">*</span> para cancelar.
+  <div class="screen">--- Confirmar Env. -<br>ENT: Açaí 1L<br>Op:João S.  50L<br>#=enviar  *=cancelar</div>
+</div></div>
+
+<div class="step"><div class="step-num">8</div><div class="step-body">
+  <strong>Resultado</strong> — Tela de sucesso ou erro. Pressione qualquer tecla para voltar ao início.
+  <div class="screen"><br>&nbsp;&nbsp;Registrado! OK<br>&nbsp;&nbsp;id: 142<br>&nbsp;&nbsp;Pressione #</div>
+</div></div>
+
+<h2>8.2 Teclas do Terminal</h2>
+<table>
+  <tr><th>Tecla</th><th>Função</th></tr>
+  <tr><td><span class="key">#</span></td><td>Confirmar / Avançar</td></tr>
+  <tr><td><span class="key">*</span></td><td>Apagar último dígito / Voltar (com buffer vazio)</td></tr>
+  <tr><td><span class="key">A</span></td><td>Navegar para cima na lista de operadores</td></tr>
+  <tr><td><span class="key">B</span></td><td>Navegar para baixo na lista de operadores / Voltar ao produto (em quantidade)</td></tr>
+  <tr><td><span class="key">1</span></td><td>Selecionar Entrada (em tela de tipo)</td></tr>
+  <tr><td><span class="key">2</span></td><td>Selecionar Saída (em tela de tipo)</td></tr>
+  <tr><td><span class="key">0-9</span></td><td>Digitar quantidade, PIN ou código de produto</td></tr>
+</table>
+
+<h2>8.3 Timeout Automático</h2>
+<p>Se o terminal ficar inativo por <strong>60 segundos</strong> (configurável em <code>MENU_IDLE_MS</code> no config.h), ele retorna automaticamente à tela inicial, cancelando o movimento em andamento.</p>
+
+<h2>8.4 Simulador (para testes)</h2>
+<p>O simulador Python replica o terminal no computador, útil para testes sem hardware físico:</p>
+<pre><code># Iniciar com Docker:
+docker compose --profile sim up esp32-sim</code></pre>
+<p>Teclas do simulador: as mesmas do teclado real + <span class="key">R</span> recarregar dados, <span class="key">S</span> simular scanner, <span class="key">Q</span> sair.</p>
+
+<!-- ══ 9. MANUTENÇÃO ══════════════════════════════════════════════════════════ -->
+<h1 id="manutencao">9. Manutenção</h1>
+
+<h2>9.1 Iniciar e Parar o Sistema</h2>
+<pre><code># Iniciar todos os serviços
+docker compose up -d
+
+# Parar todos os serviços (dados preservados)
+docker compose down
+
+# Reiniciar apenas o backend
+docker compose restart backend
+
+# Ver status
+docker compose ps</code></pre>
+
+<h2>9.2 Visualizar Logs</h2>
+<pre><code># Logs em tempo real (todos os serviços)
+docker compose logs -f
+
+# Apenas o backend
+docker compose logs -f backend
+
+# Apenas o banco de dados
+docker compose logs -f postgres</code></pre>
+
+<h2>9.3 Backup do Banco de Dados</h2>
+<pre><code># Exportar dump completo
+docker compose exec postgres pg_dump -U sorv_user controle_estoque > backup_$(date +%Y%m%d).sql
+
+# Restaurar
+docker compose exec -T postgres psql -U sorv_user controle_estoque < backup_20260101.sql</code></pre>
+
+<div class="callout callout-warn">
+  <strong>⚠️ Backup regular</strong>
+  Recomenda-se backup diário automático via cron (Linux) ou Agendador de Tarefas (Windows). O arquivo <code>.env</code> também deve ser salvo separadamente pois contém as chaves de segurança.
+</div>
+
+<h2>9.4 Atualização do Sistema</h2>
+<pre><code># Obter atualizações do repositório
+git pull origin master
+
+# Reconstruir e reiniciar containers
+docker compose up -d --build
+
+# Executar novas migrações (se houver)
+docker compose run --rm backend alembic upgrade head</code></pre>
+
+<h2>9.5 Atualização do Firmware ESP32 (OTA)</h2>
+<p>Com o ESP32 em execução e conectado à rede, é possível atualizar o firmware sem cabo USB:</p>
+<pre><code># Upload OTA pelo IP do dispositivo
+cd esp32
+pio run -t upload --upload-port 192.168.1.XXX</code></pre>
+<p>O IP atual do ESP32 é exibido no monitor serial ao iniciar. Verifique também no roteador WiFi.</p>
+
+<h2>9.6 Resolução de Problemas</h2>
+
+<table>
+  <tr><th>Sintoma</th><th>Causa provável</th><th>Solução</th></tr>
+  <tr><td>Portal não abre no navegador</td><td>Containers não iniciados ou porta bloqueada</td><td><code>docker compose up -d</code>; verificar firewall</td></tr>
+  <tr><td>"Usuário ou senha incorretos" no login</td><td>Credenciais erradas</td><td>Verifique usuário/senha; redefina pelo banco se necessário</td></tr>
+  <tr><td>ESP32 não conecta ao WiFi</td><td>SSID/senha errados ou rede 5 GHz</td><td>Verificar config.h; o ESP32 só funciona em 2.4 GHz</td></tr>
+  <tr><td>ESP32 exibe "Erro: HTTP 401"</td><td>Chave API incorreta</td><td>Verificar <code>API_KEY</code> em config.h vs <code>ESP32_API_KEY</code> no .env</td></tr>
+  <tr><td>ESP32 exibe "PIN não cadastrado"</td><td>Operador sem PIN definido</td><td>Admin → Operadores → Editar → definir PIN</td></tr>
+  <tr><td>Produto não encontrado pelo código</td><td>SKU incorreto ou produto inativo</td><td>Verificar SKU em Admin → Produtos; confirmar que está ativo</td></tr>
+  <tr><td>Banco de dados não inicia</td><td>Senha incorreta no .env</td><td>Verificar <code>POSTGRES_PASSWORD</code>; <code>docker compose down -v</code> para resetar volume</td></tr>
+  <tr><td>Containers não iniciam após update</td><td>Migração pendente</td><td><code>docker compose run --rm backend alembic upgrade head</code></td></tr>
+</table>
+
+<h2>9.7 Redefinir Senha Admin (emergência)</h2>
+<pre><code># Conectar ao banco e alterar a senha diretamente:
+docker compose exec postgres psql -U sorv_user -d controle_estoque
+
+# No prompt psql:
+UPDATE users SET hashed_password = crypt('nova_senha', gen_salt('bf')) WHERE username = 'admin';
+\q</code></pre>
+<p>Ou via Python (mais seguro):</p>
+<pre><code>docker compose run --rm backend python -c "
+from app.services.auth_service import hash_password
+print(hash_password('nova_senha'))
+"
+# Copie o hash e use:
+docker compose exec postgres psql -U sorv_user -d controle_estoque \
+  -c \"UPDATE users SET hashed_password='HASH_ACIMA' WHERE username='admin'\"</code></pre>
+
+<!-- ══ 10. REFERÊNCIA RÁPIDA ══════════════════════════════════════════════════ -->
+<h1 id="referencia">10. Referência Rápida</h1>
+
+<h2>URLs do Sistema</h2>
+<table>
+  <tr><th>URL</th><th>Descrição</th><th>Acesso</th></tr>
+  <tr><td><code>/dashboard</code></td><td>Painel principal</td><td>Usuário/Admin</td></tr>
+  <tr><td><code>/reports</code></td><td>Relatórios com filtros</td><td>Usuário/Admin</td></tr>
+  <tr><td><code>/admin/operators</code></td><td>Gestão de operadores</td><td>Admin</td></tr>
+  <tr><td><code>/admin/products</code></td><td>Gestão de produtos</td><td>Admin</td></tr>
+  <tr><td><code>/admin/categories</code></td><td>Gestão de categorias</td><td>Admin</td></tr>
+  <tr><td><code>/admin/shifts</code></td><td>Gestão de turnos</td><td>Admin</td></tr>
+  <tr><td><code>/admin/users</code></td><td>Gestão de usuários web</td><td>Admin</td></tr>
+  <tr><td><code>/api/docs</code></td><td>Documentação da API REST</td><td>Interno</td></tr>
+</table>
+
+<h2>Endpoints API para ESP32</h2>
+<table>
+  <tr><th>Método</th><th>Endpoint</th><th>Descrição</th></tr>
+  <tr><td>GET</td><td><code>/api/v1/operators</code></td><td>Lista operadores ativos</td></tr>
+  <tr><td>POST</td><td><code>/api/v1/operators/{id}/verify-pin</code></td><td>Valida PIN do operador</td></tr>
+  <tr><td>GET</td><td><code>/api/v1/products/by-sku/{sku}</code></td><td>Busca produto por código</td></tr>
+  <tr><td>POST</td><td><code>/api/v1/movements</code></td><td>Registra movimento de estoque</td></tr>
+  <tr><td>GET</td><td><code>/api/v1/shifts</code></td><td>Lista turnos para detecção automática</td></tr>
+</table>
+
+<h2>Arquivo config.h — Parâmetros do Firmware</h2>
+<table>
+  <tr><th>Define</th><th>Descrição</th></tr>
+  <tr><td><code>WIFI_SSID</code></td><td>Nome da rede WiFi</td></tr>
+  <tr><td><code>WIFI_PASSWORD</code></td><td>Senha da rede WiFi</td></tr>
+  <tr><td><code>SERVER_URL</code></td><td>URL base do servidor (ex: <code>http://192.168.1.100:8080</code>)</td></tr>
+  <tr><td><code>API_KEY</code></td><td>Chave de autenticação (deve coincidir com <code>ESP32_API_KEY</code> no .env)</td></tr>
+  <tr><td><code>DEVICE_ID</code></td><td>Identificador único do terminal (aparece nos relatórios)</td></tr>
+  <tr><td><code>MENU_IDLE_MS</code></td><td>Timeout de inatividade em ms (padrão: 60000 = 1 min)</td></tr>
+  <tr><td><code>LCD_I2C_ADDR</code></td><td>Endereço I2C do display (padrão: 0x27)</td></tr>
+</table>
+
+<hr class="section">
+
+<footer>
+  <p><strong>SorvPel Controle de Estoque</strong> — Manual do Sistema v1.0</p>
+  <p>Para suporte, contate o administrador do sistema.</p>
+  <p style="margin-top:8px;font-size:.78em;">Este documento é de uso interno.</p>
+</footer>
+
+</div><!-- /container -->
+</body>
+</html>
