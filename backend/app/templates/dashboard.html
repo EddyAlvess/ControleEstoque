@@ -145,42 +145,53 @@ function showCategories() {
   renderCategories();
 }
 
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function renderCategories() {
   const section = document.getElementById('stockSection');
+  const count = stockByCategory.length;
 
-  if (!stockByCategory.length) {
+  if (!count) {
     section.innerHTML =
       '<p class="text-muted text-center py-2">Nenhuma categoria com movimentação.</p>';
     return;
   }
 
+  /* Adaptive sizing: fewer items → larger cards; more items → smaller cards */
+  const minCardPx = count <= 3 ? 160 : count <= 6 ? 130 : count <= 10 ? 105 : 85;
+  const fontSize  = count <= 6 ? '.82rem' : count <= 10 ? '.75rem' : '.68rem';
+  const numSize   = count <= 6 ? '1.25rem' : count <= 10 ? '1rem'  : '.88rem';
+  const py        = count <= 8 ? 'py-2' : 'py-1';
+
   const cols = stockByCategory.map(c => {
-    const balClass = c.balance >= 0 ? 'text-success' : 'text-danger';
+    const balClass    = c.balance >= 0 ? 'text-success' : 'text-danger';
     const borderClass = c.balance >= 0 ? 'border-success' : 'border-danger';
+    const name        = escHtml(c.category_name);
     return `
-      <div class="col">
-        <div class="card border ${borderClass} text-center py-3 px-2 h-100 cat-card"
+      <div class="cat-col" style="min-width:0;">
+        <div class="card border ${borderClass} text-center ${py} px-1 h-100 cat-card"
              data-cat-id="${c.category_id}"
              data-cat-name="${c.category_name}"
-             style="cursor:pointer;" title="Clique para ver por produto">
-          <div class="fw-semibold mb-1 small">${c.category_name}</div>
-          <div class="h4 mb-0 ${balClass}">${c.balance.toFixed(1)}</div>
-          <div class="mt-1" style="font-size:.7rem;">
-            <span class="text-success">▲ ${c.total_entry.toFixed(1)}</span>
-            &nbsp;/&nbsp;
-            <span class="text-danger">▼ ${c.total_exit.toFixed(1)}</span>
+             style="cursor:pointer;font-size:${fontSize};"
+             title="${name} — clique para ver por produto">
+          <div class="fw-semibold mb-1 text-truncate" title="${name}">${name}</div>
+          <div class="fw-bold ${balClass}" style="font-size:${numSize};">${c.balance.toFixed(1)}</div>
+          <div class="mt-1 text-nowrap" style="font-size:.9em;">
+            <span class="text-success">▲${c.total_entry.toFixed(1)}</span>
+            <span class="text-danger ms-1">▼${c.total_exit.toFixed(1)}</span>
           </div>
         </div>
       </div>`;
   }).join('');
 
   section.innerHTML = `
-    <div class="row row-cols-2 row-cols-md-4 g-2">${cols}</div>
-    <div class="text-muted mt-2" style="font-size:.72rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(${minCardPx}px,1fr));gap:.4rem;">${cols}</div>
+    <div class="text-muted mt-2" style="font-size:.68rem;">
       <i class="bi bi-hand-index me-1"></i>Clique em uma categoria para ver o detalhamento por produto.
     </div>`;
 
-  /* Attach listeners after innerHTML is set */
   section.querySelectorAll('.cat-card').forEach(card => {
     card.addEventListener('click', () => {
       drilldown(parseInt(card.dataset.catId), card.dataset.catName);
