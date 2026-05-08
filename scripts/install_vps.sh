@@ -142,15 +142,19 @@ fi
 $DC build --quiet
 
 # ─── 7. Certificado temporário (apenas modo HTTPS) ───────────────────────────
+# IMPORTANTE: o cert deve ser criado DENTRO do volume Docker (certbot_certs),
+# não no FS do host — o container nginx lê do volume, não de /etc/letsencrypt.
 if [[ "$HTTP_ONLY" == "false" ]]; then
     info "Gerando certificado temporário para bootstrap nginx HTTPS..."
-    mkdir -p "/etc/letsencrypt/live/${DOMAIN}"
-    openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
-        -keyout "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" \
-        -out    "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" \
-        -subj   "/CN=${DOMAIN}" 2>/dev/null
-    [[ ! -f /etc/letsencrypt/ssl-dhparams.pem ]] && \
-        openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048 2>/dev/null
+    $DC run --rm --no-deps --entrypoint sh certbot -c "
+        mkdir -p /etc/letsencrypt/live/${DOMAIN}
+        openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout /etc/letsencrypt/live/${DOMAIN}/privkey.pem \
+            -out    /etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
+            -subj '/CN=${DOMAIN}' 2>/dev/null
+        [ -f /etc/letsencrypt/ssl-dhparams.pem ] || \
+            openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048 2>/dev/null
+    "
 fi
 
 # ─── 8. Primeiro start ───────────────────────────────────────────────────────
@@ -159,20 +163,25 @@ $DC up -d postgres backend nginx
 
 info "Aguardando backend ficar saudável..."
 for i in $(seq 1 30); do
-    if curl -sf "http://localhost/health" &>/dev/null; then break; fi
+    # Em modo HTTP: curl http; em modo HTTPS: porta 80 redireciona, testar https
+    if curl -sf "http://localhost/health" &>/dev/null || \
+       curl -sf --insecure "https://localhost/health" &>/dev/null; then
+        break
+    fi
     sleep 3
 done
 
 # ─── 9. Certbot (apenas modo HTTPS) ──────────────────────────────────────────
+# IMPORTANTE: usar $DC run para que o certbot grave no volume correto
+# (inventcontrol_certbot_certs), não em um volume avulso sem prefixo.
 if [[ "$HTTP_ONLY" == "false" ]]; then
     info "Obtendo certificado Let's Encrypt para ${DOMAIN}..."
     STAGING_FLAG=""
     [[ "$CERTBOT_STAGING" == "true" ]] && STAGING_FLAG="--staging"
 
-    docker run --rm \
-        -v certbot_certs:/etc/letsencrypt \
-        -v certbot_webroot:/var/www/certbot \
-        certbot/certbot certonly --webroot \
+    $DC run --rm --no-deps \
+        --entrypoint certbot certbot \
+        certonly --webroot \
         -w /var/www/certbot \
         -d "${DOMAIN}" \
         --email "${CERTBOT_EMAIL}" \

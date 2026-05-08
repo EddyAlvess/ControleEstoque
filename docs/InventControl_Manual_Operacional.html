@@ -239,7 +239,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="section" id="s-login">
   <h2>1. Login no Portal Web</h2>
-  <p>Acesse o endereço do servidor no navegador (padrão: <code>http://&lt;IP&gt;:8080</code>). A tela de login é exibida para todos que ainda não estão autenticados.</p>
+  <p>Acesse o endereço do servidor no navegador. Em instalação local (desenvolvimento): <code>http://&lt;IP&gt;:8080</code>. Em produção cloud (VPS com HTTPS): <code>https://&lt;domínio&gt;</code>. A tela de login é exibida para todos que ainda não estão autenticados.</p>
 
   <!-- Mockup Login -->
   <div class="mock-container">
@@ -277,8 +277,9 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
     <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Usuário</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Login cadastrado pelo administrador (padrão inicial: <code>admin</code>)</td></tr>
     <tr><td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Senha</strong></td><td style="padding:.4rem .6rem;border:1px solid #dee2e6">Senha definida na instalação (padrão: <code>admin123</code>)</td></tr>
   </table>
-  <div class="warn">⚠️ Troque a senha padrão logo após o primeiro acesso em <strong>Menu → ícone de chave</strong>.</div>
+  <div class="warn">⚠️ Troque a senha padrão logo após o primeiro acesso em <strong>Menu → ícone de chave 🔑</strong>.</div>
   <div class="note">ℹ️ Em caso de usuário/senha incorretos, o sistema exibe a mensagem <em>"Usuário ou senha incorretos. Tente novamente."</em> na mesma tela.</div>
+  <div class="note">ℹ️ Após <strong>5 tentativas incorretas em 1 minuto</strong>, o sistema bloqueia temporariamente novas tentativas (resposta 429). Aguarde 1 minuto antes de tentar novamente.</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -308,6 +309,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
           <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
           <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link"><i>🎨</i> Tema</div>
         </div>
         <div class="mock-sidebar-footer">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -451,6 +453,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
           <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
           <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link"><i>🎨</i> Tema</div>
         </div>
         <div class="mock-sidebar-footer">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -579,6 +582,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
           <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
           <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link"><i>🎨</i> Tema</div>
         </div>
         <div class="mock-sidebar-footer">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -697,6 +701,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
           <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
           <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link"><i>🎨</i> Tema</div>
         </div>
         <div class="mock-sidebar-footer">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -802,6 +807,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
           <div class="mock-nav-link active"><i>🏷️</i> Categorias</div>
           <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link"><i>🎨</i> Tema</div>
         </div>
         <div class="mock-sidebar-footer">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -862,6 +868,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
           <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
           <div class="mock-nav-link active"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link"><i>🎨</i> Tema</div>
         </div>
         <div class="mock-sidebar-footer">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -887,7 +894,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
                 <td><span class="mock-btn mock-btn-outline-warning">🔑</span> <span class="mock-btn mock-btn-outline-danger">⊙</span></td>
               </tr>
               <tr>
-                <td class="fw-semibold">supervisor</td><td>Ana Paula</td><td class="text-muted">ana@sorvpel.com</td>
+                <td class="fw-semibold">supervisor</td><td>Ana Paula</td><td class="text-muted">ana@empresa.com</td>
                 <td><span class="mock-badge bg-secondary">user</span></td>
                 <td><span class="mock-badge bg-success">Ativo</span></td>
                 <td><span class="mock-btn mock-btn-outline-warning">🔑</span> <span class="mock-btn mock-btn-outline-danger">⊙</span></td>
@@ -937,6 +944,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
           <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
           <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link active"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link"><i>🎨</i> Tema</div>
         </div>
         <div class="mock-sidebar-footer">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
@@ -996,26 +1004,28 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
     </div>
     <div class="mock-wrap">
       <!-- Sidebar -->
-      <div class="mock-sidebar">
+      <nav class="mock-sidebar">
         <div class="mock-brand"><span class="mock-brand-text">🍨 InventControl</span></div>
-        <div style="padding:.4rem 0 .2rem">
-          <div class="mock-nav-link"><i>📊</i> Dashboard</div>
-          <div class="mock-nav-link"><i>📈</i> Relatórios</div>
+        <div style="padding:.3rem 0">
+          <div class="mock-nav-link"><i>⚡</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📊</i> Relatórios</div>
           <hr class="mock-divider">
           <div class="mock-section-label">Admin</div>
           <div class="mock-nav-link"><i>👥</i> Operadores</div>
           <div class="mock-nav-link"><i>📦</i> Produtos</div>
           <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
-          <div class="mock-nav-link"><i>👤</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>⚙️</i> Usuários Web</div>
           <div class="mock-nav-link"><i>🕐</i> Turnos</div>
           <div class="mock-nav-link active"><i>🎨</i> <strong>Tema</strong></div>
         </div>
         <div class="mock-sidebar-footer">
-          <div class="mock-user-name">Administrador</div>
-          <div class="mock-role-badge">admin</div>
-          <div class="mock-logout-btn" style="margin-top:.3rem">↩ Sair</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <div><div class="mock-user-name">Administrador</div><span class="mock-role-badge">admin</span></div>
+            <span style="color:#adb5bd;font-size:.8rem">🔑</span>
+          </div>
+          <div class="mock-logout-btn">⬡ Sair</div>
         </div>
-      </div>
+      </nav>
       <!-- Main -->
       <div class="mock-main">
         <div class="mock-page-header">
@@ -1151,7 +1161,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
   <h4>Regras</h4>
   <ul>
     <li>A senha atual deve estar correta</li>
-    <li>A nova senha deve ter pelo menos <strong>6 caracteres</strong></li>
+    <li>A nova senha deve ter pelo menos <strong>8 caracteres</strong></li>
     <li>Nova senha e confirmação devem ser iguais</li>
     <li>Após salvar, o modal fecha automaticamente em 1,5 s</li>
     <li>Administradores podem redefinir a senha de outros usuários em <em>Admin › Usuários Web › 🔑</em></li>

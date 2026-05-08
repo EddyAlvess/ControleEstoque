@@ -69,16 +69,18 @@ grep -q '^SECURE_COOKIES=' .env \
     || echo "SECURE_COOKIES=true" >> .env
 
 # ─── Certificado autoassinado temporário ─────────────────────────────────────
+# Criar DENTRO do volume Docker (certbot_certs) — não no FS do host
 info "Gerando certificado temporário para bootstrap do nginx HTTPS..."
-mkdir -p "/etc/letsencrypt/live/${NEW_DOMAIN}"
-openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
-    -keyout "/etc/letsencrypt/live/${NEW_DOMAIN}/privkey.pem" \
-    -out    "/etc/letsencrypt/live/${NEW_DOMAIN}/fullchain.pem" \
-    -subj   "/CN=${NEW_DOMAIN}" 2>/dev/null
-
-if [[ ! -f /etc/letsencrypt/ssl-dhparams.pem ]]; then
-    openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048 2>/dev/null
-fi
+docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+    run --rm --no-deps --entrypoint sh certbot -c "
+        mkdir -p /etc/letsencrypt/live/${NEW_DOMAIN}
+        openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout /etc/letsencrypt/live/${NEW_DOMAIN}/privkey.pem \
+            -out    /etc/letsencrypt/live/${NEW_DOMAIN}/fullchain.pem \
+            -subj '/CN=${NEW_DOMAIN}' 2>/dev/null
+        [ -f /etc/letsencrypt/ssl-dhparams.pem ] || \
+            openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048 2>/dev/null
+    "
 
 # ─── Parar modo HTTP provisório e subir com HTTPS ────────────────────────────
 info "Parando modo HTTP provisório..."
@@ -98,10 +100,10 @@ info "Solicitando certificado Let's Encrypt para ${NEW_DOMAIN}..."
 STAGING_FLAG=""
 [[ "$CERTBOT_STAGING" == "true" ]] && STAGING_FLAG="--staging"
 
-docker run --rm \
-    -v certbot_certs:/etc/letsencrypt \
-    -v certbot_webroot:/var/www/certbot \
-    certbot/certbot certonly --webroot \
+docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+    run --rm --no-deps \
+    --entrypoint certbot certbot \
+    certonly --webroot \
     -w /var/www/certbot \
     -d "${NEW_DOMAIN}" \
     --email "${CERTBOT_EMAIL}" \
