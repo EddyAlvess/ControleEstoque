@@ -1,14 +1,20 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import auth, categories, movements, operators, ota, products, reports, shifts, users, web
+from app.routers import auth, categories, movements, operators, ota, products, reports, settings, shifts, users, web
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.database import AsyncSessionLocal
+    from app.services.settings_service import settings_cache
+    Path("app/static/logos").mkdir(parents=True, exist_ok=True)
+    async with AsyncSessionLocal() as db:
+        await settings_cache.reload(db)
     yield
 
 
@@ -20,6 +26,8 @@ app = FastAPI(
     redoc_url=None,
 )
 
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 app.include_router(auth.router)
 app.include_router(web.router)
 app.include_router(users.router)
@@ -30,6 +38,7 @@ app.include_router(reports.router)
 app.include_router(categories.router)
 app.include_router(shifts.router)
 app.include_router(ota.router)
+app.include_router(settings.router)
 
 
 @app.get("/health")

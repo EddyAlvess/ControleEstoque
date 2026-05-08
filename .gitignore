@@ -46,3 +46,14 @@ logs/
 
 # Uploads
 backend/uploads/
+
+# Static uploads (logos persist on server, not in repo)
+backend/app/static/logos/*.png
+backend/app/static/logos/*.jpg
+backend/app/static/logos/*.jpeg
+backend/app/static/logos/*.gif
+backend/app/static/logos/*.webp
+backend/app/static/logos/*.svg
+
+# Installation manual (sensitive infra details — not for public repo)
+docs/SorvPel_Manual.html

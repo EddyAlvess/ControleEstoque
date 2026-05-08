@@ -227,6 +227,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
     <li><a href="#s-categories">Administração › Categorias</a></li>
     <li><a href="#s-users">Administração › Usuários Web</a></li>
     <li><a href="#s-shifts">Administração › Turnos</a></li>
+    <li><a href="#s-theme">Administração › Tema da Empresa</a></li>
     <li><a href="#s-password">Alterar Senha</a></li>
     <li><a href="#s-esp32">Terminal ESP32 — Fluxo de Operação</a></li>
     <li><a href="#s-esp32-screens">Terminal ESP32 — Telas do Display</a></li>
@@ -981,10 +982,140 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- 9. ALTERAR SENHA -->
+<!-- 9. TEMA DA EMPRESA -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s-theme">
+  <h2>9. Administração › Tema da Empresa</h2>
+  <p>Exclusivo para <strong>Administradores</strong>. Acesse em <code>Admin → Tema</code> (ícone 🎨 no menu lateral). Permite personalizar o <strong>nome da empresa</strong> e o <strong>logotipo</strong> exibidos no topo da barra lateral em todas as telas do sistema.</p>
+
+  <!-- Mockup Tema -->
+  <div class="mock-container">
+    <div class="mock-bar">
+      <span class="mock-dot d-red"></span><span class="mock-dot d-yel"></span><span class="mock-dot d-grn"></span>
+      <div class="mock-url">http://192.168.1.100:8080/admin/settings</div>
+    </div>
+    <div class="mock-wrap">
+      <!-- Sidebar -->
+      <div class="mock-sidebar">
+        <div class="mock-brand"><span class="mock-brand-text">🍨 SorvPel</span></div>
+        <div style="padding:.4rem 0 .2rem">
+          <div class="mock-nav-link"><i>📊</i> Dashboard</div>
+          <div class="mock-nav-link"><i>📈</i> Relatórios</div>
+          <hr class="mock-divider">
+          <div class="mock-section-label">Admin</div>
+          <div class="mock-nav-link"><i>👥</i> Operadores</div>
+          <div class="mock-nav-link"><i>📦</i> Produtos</div>
+          <div class="mock-nav-link"><i>🏷️</i> Categorias</div>
+          <div class="mock-nav-link"><i>👤</i> Usuários Web</div>
+          <div class="mock-nav-link"><i>🕐</i> Turnos</div>
+          <div class="mock-nav-link active"><i>🎨</i> <strong>Tema</strong></div>
+        </div>
+        <div class="mock-sidebar-footer">
+          <div class="mock-user-name">Administrador</div>
+          <div class="mock-role-badge">admin</div>
+          <div class="mock-logout-btn" style="margin-top:.3rem">↩ Sair</div>
+        </div>
+      </div>
+      <!-- Main -->
+      <div class="mock-main">
+        <div class="mock-page-header">
+          <h5>🎨 Tema da Empresa</h5>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <!-- Card identidade -->
+          <div class="mock-card">
+            <div class="mock-card-header">🏢 Identidade</div>
+            <div class="mock-card-body">
+              <div class="mock-form-group">
+                <label class="mock-label">Nome da empresa</label>
+                <input class="mock-input" value="SorvPel" readonly>
+              </div>
+              <div class="mock-form-group">
+                <label class="mock-label">Ícone Bootstrap</label>
+                <div style="display:flex;gap:.3rem">
+                  <span style="border:1px solid #ced4da;border-radius:4px;padding:.2rem .45rem;font-size:.72rem">❄</span>
+                  <input class="mock-input" value="bi-snow2" readonly style="flex:1">
+                </div>
+              </div>
+              <span class="mock-btn mock-btn-primary" style="font-size:.68rem">💾 Salvar nome e ícone</span>
+            </div>
+          </div>
+          <!-- Card logo -->
+          <div class="mock-card">
+            <div class="mock-card-header">🖼️ Logotipo (imagem)</div>
+            <div class="mock-card-body">
+              <div style="background:#1a1a2e;border-radius:5px;padding:.5rem;text-align:center;margin-bottom:.4rem">
+                <span style="color:#e94560;font-weight:700;font-size:.85rem">❄ SorvPel</span>
+              </div>
+              <div class="mock-form-group">
+                <label class="mock-label">Enviar novo logotipo</label>
+                <input class="mock-input" value="logo_empresa.png" readonly style="font-size:.65rem">
+                <div class="mock-form-text">PNG, JPG, WebP ou SVG · máx. 2 MB</div>
+              </div>
+              <div style="display:flex;gap:.3rem">
+                <span class="mock-btn mock-btn-success" style="font-size:.68rem">☁ Enviar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Live preview -->
+        <div class="mock-card" style="margin-top:.5rem">
+          <div class="mock-card-header">👁️ Pré-visualização da barra lateral</div>
+          <div style="background:#1a1a2e;border-radius:0 0 5px 5px;padding:.4rem .7rem;display:flex;align-items:center;gap:.4rem">
+            <span style="color:#e94560;font-weight:700;font-size:.85rem">❄ SorvPel</span>
+            <span style="color:#adb5bd;margin-left:auto;font-size:.7rem">‹</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Campos</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:.8rem">
+    <tr style="background:#f8f9fa">
+      <th style="padding:.4rem .6rem;border:1px solid #dee2e6">Campo</th>
+      <th style="padding:.4rem .6rem;border:1px solid #dee2e6">Descrição</th>
+    </tr>
+    <tr>
+      <td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Nome da empresa</strong></td>
+      <td style="padding:.4rem .6rem;border:1px solid #dee2e6">Texto exibido ao lado do ícone/logotipo no topo da barra lateral. Máx. 64 caracteres.</td>
+    </tr>
+    <tr>
+      <td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Ícone Bootstrap</strong></td>
+      <td style="padding:.4rem .6rem;border:1px solid #dee2e6">Classe de ícone usada quando não há logotipo carregado. Ex.: <code>bi-snow2</code>, <code>bi-shop</code>, <code>bi-cup-hot</code>. Consulte <em>icons.getbootstrap.com</em> para a lista completa.</td>
+    </tr>
+    <tr>
+      <td style="padding:.4rem .6rem;border:1px solid #dee2e6"><strong>Logotipo (imagem)</strong></td>
+      <td style="padding:.4rem .6rem;border:1px solid #dee2e6">Arquivo PNG, JPG, WebP ou SVG com até 2 MB. Quando carregado, substitui o ícone Bootstrap. Recomendado: fundo transparente, altura ≥ 48 px.</td>
+    </tr>
+  </table>
+
+  <h4>Como trocar o nome e o ícone</h4>
+  <ol>
+    <li>Acesse <strong>Admin → Tema</strong> no menu lateral</li>
+    <li>Edite o campo <em>Nome da empresa</em></li>
+    <li>Opcionalmente, altere o campo <em>Ícone Bootstrap</em> — o preview ao lado atualiza em tempo real</li>
+    <li>Clique em <strong>Salvar nome e ícone</strong> → a página recarrega com o novo nome</li>
+  </ol>
+
+  <h4>Como carregar um logotipo personalizado</h4>
+  <ol>
+    <li>No card <em>Logotipo (imagem)</em>, clique em <strong>Enviar novo logotipo</strong> e selecione o arquivo</li>
+    <li>Um preview do arquivo aparece imediatamente na página</li>
+    <li>Clique em <strong>Enviar logotipo</strong> para confirmar o upload</li>
+    <li>A página recarrega e o logotipo passa a aparecer na barra lateral de todas as telas</li>
+    <li>Para remover o logotipo e voltar ao ícone, clique em <strong>Remover logotipo</strong></li>
+  </ol>
+
+  <div class="tip">✅ A alteração é imediata para todos os usuários conectados — não é necessário reiniciar o servidor.</div>
+  <div class="note">ℹ️ O logotipo fica armazenado em <code>app/static/logos/logo.&lt;ext&gt;</code> no servidor. Em instalações Docker, adicione um volume para persistir o arquivo entre reinicializações.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 10. ALTERAR SENHA -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="section" id="s-password">
-  <h2>9. Alterar Senha</h2>
+  <h2>10. Alterar Senha</h2>
   <p>Qualquer usuário pode alterar sua própria senha clicando no <strong>ícone de chave 🔑</strong> ao lado do nome de usuário no rodapé esquerdo do menu lateral.</p>
 
   <div class="mock-container">
@@ -1031,7 +1162,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
 <!-- 10. ESP32 FLUXO -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="section" id="s-esp32">
-  <h2>10. Terminal ESP32 — Fluxo de Operação</h2>
+  <h2>11. Terminal ESP32 — Fluxo de Operação</h2>
   <p>O terminal ESP32 é um dispositivo instalado na linha de produção. Possui display LCD 20×4 e teclado matricial 4×3 (<kbd>0</kbd>–<kbd>9</kbd>, <kbd>*</kbd>, <kbd>#</kbd>). O operador registra entradas e saídas sem acessar o portal web.</p>
 
   <h3>Teclado</h3>
@@ -1073,7 +1204,7 @@ kbd{display:inline-block;background:#e9ecef;border:1px solid #adb5bd;border-bott
 <!-- 11. ESP32 TELAS -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="section" id="s-esp32-screens">
-  <h2>11. Terminal ESP32 — Telas do Display</h2>
+  <h2>12. Terminal ESP32 — Telas do Display</h2>
   <p>O display LCD exibe 4 linhas de 20 caracteres. A seguir estão todas as telas que o operador encontrará.</p>
 
   <!-- TELA 1 — Boot -->

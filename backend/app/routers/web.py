@@ -20,13 +20,14 @@ from app.models.product import Product
 from app.models.shift import Shift
 from app.models.user import WebUser
 from app.services import report_service
+from app.services.settings_service import settings_cache
 
 router = APIRouter(tags=["web"])
 templates = Jinja2Templates(directory="app/templates")
 
 
 def _ctx(request: Request, user: WebUser, **kwargs) -> dict:
-    return {"request": request, "current_user": user, **kwargs}
+    return {"request": request, "current_user": user, "cs": settings_cache.get(), **kwargs}
 
 
 @router.get("/", include_in_schema=False)
@@ -244,3 +245,11 @@ async def admin_shifts(
         for s in shifts
     ]
     return templates.TemplateResponse("admin/shifts.html", _ctx(request, user, shifts=shifts_list))
+
+
+@router.get("/admin/settings", response_class=HTMLResponse)
+async def admin_settings(
+    request: Request,
+    user: WebUser = Depends(require_admin),
+):
+    return templates.TemplateResponse("admin/settings.html", _ctx(request, user))

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}SorvPel - Controle de Estoque{% endblock %}</title>
+  <title>{% block title %}{{ cs.company_name }} - Controle de Estoque{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
@@ -103,7 +103,14 @@
 {% if current_user %}
   <nav class="sidebar d-flex flex-column" id="sidebar">
     <div class="sidebar-brand">
-      <span class="brand-text"><i class="bi bi-snow2"></i> SorvPel</span>
+      <span class="brand-text">
+        {% if cs.logo_path %}
+          <img src="{{ cs.logo_path }}" alt="Logo" style="height:22px;vertical-align:middle;margin-right:4px;border-radius:3px;">
+        {% else %}
+          <i class="bi {{ cs.logo_icon }}"></i>
+        {% endif %}
+        {{ cs.company_name }}
+      </span>
       <button class="sidebar-toggle" onclick="toggleSidebar()" title="Recolher menu">
         <i class="bi bi-chevron-left" id="sidebarIcon"></i>
       </button>
@@ -161,6 +168,13 @@
            href="/admin/shifts" title="Turnos">
           <i class="bi bi-clock"></i>
           <span class="nav-label">Turnos</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if '/admin/settings' in request.url.path %}active{% endif %}"
+           href="/admin/settings" title="Tema">
+          <i class="bi bi-palette"></i>
+          <span class="nav-label">Tema</span>
         </a>
       </li>
       {% endif %}

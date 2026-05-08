@@ -94,6 +94,12 @@ Routes are split into two categories in `routers/`:
 - `operators.badge_code` is the identifier typed/scanned on the ESP32 — it is NOT the primary key.
 - Shifts are stored in the `shifts` table (dynamic, not hardcoded). When a movement is recorded the server auto-detects shift by hour via `_detect_shift()` in `routers/movements.py`. Shift `name` is the stored identifier; `label` is the display label.
 - Products belong to one `Category` (nullable FK). Categories are managed via `/admin/categories`.
+- `company_settings` is a singleton table (always id=1). It holds `company_name`, `logo_path` (URL served via `/static/logos/`), and `logo_icon` (Bootstrap Icon class). Loaded at startup into `settings_cache` in `services/settings_service.py` and injected into every template as `cs`.
+
+### Company branding / theme
+`CompanySettings` (migration 005) is a singleton holding the company name and logo. At startup (`lifespan()` in `main.py`) the record is loaded into a module-level `_SettingsCache` object. Every Jinja2 template context receives it via the `cs` key injected in `_ctx()` in `routers/web.py`. On save (`PUT /api/v1/settings`), the cache is updated in-memory — no server restart needed.
+
+Logo images are stored in `backend/app/static/logos/` and served by FastAPI's `StaticFiles` mount at `/static`. In Docker deployments add a bind-mount for this directory to persist logos across container restarts.
 
 ### Template safety rule
 **Never pass user-entered strings directly into onclick attributes.** All admin templates (products, categories, shifts) embed their data as `const DATA = {{ items | tojson }};` in a script block and pass only integer IDs to onclick handlers (e.g. `onclick="openEdit({{ item.id }})"`). This avoids HTML attribute breakage when names contain quotes or special characters.
@@ -127,8 +133,13 @@ The `docker-compose.override.yml` activates automatically in dev: mounts the ful
 | API route definitions | `backend/app/routers/` |
 | Complex report queries | `backend/app/services/report_service.py` |
 | Auth logic (JWT, bcrypt) | `backend/app/services/auth_service.py` |
+| Company branding cache | `backend/app/services/settings_service.py` |
+| Company settings model | `backend/app/models/settings.py` |
+| Company settings API | `backend/app/routers/settings.py` |
 | Dependency injection (auth guards) | `backend/app/dependencies.py` |
 | HTML templates | `backend/app/templates/` |
+| Admin theme template | `backend/app/templates/admin/settings.html` |
+| Static files (logos) | `backend/app/static/logos/` |
 | Alembic migrations | `backend/alembic/versions/` |
 | ESP32 state machine | `esp32/src/menu.cpp` |
 | ESP32 HTTP client | `esp32/src/api_client.cpp` |
@@ -146,6 +157,7 @@ The `docker-compose.override.yml` activates automatically in dev: mounts the ful
 | `/admin/categories` | CRUD categorias | admin |
 | `/admin/users` | CRUD usuários web | admin |
 | `/admin/shifts` | CRUD turnos (detecção automática por hora) | admin |
+| `/admin/settings` | Tema: nome da empresa + logotipo | admin |
 
 ## REST API Summary
 
@@ -162,3 +174,6 @@ The `docker-compose.override.yml` activates automatically in dev: mounts the ful
 | `/api/v1/reports/stock/product` | Saldo acumulado por produto (requer `category_id`) |
 | `/api/v1/reports/export` | Download CSV com filtros |
 | `/api/v1/ota` | OTA firmware update (ESP32) |
+| `/api/v1/settings` | GET/PUT configurações de tema (nome, ícone) |
+| `/api/v1/settings/logo` | POST upload / DELETE logotipo |
+| `/static/logos/` | Arquivos de logotipo servidos pelo FastAPI StaticFiles |

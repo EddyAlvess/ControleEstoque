@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Tema - {{ cs.company_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h5 class="mb-0 fw-bold"><i class="bi bi-palette me-2"></i>Tema da Empresa</h5>
+    <small class="text-muted">Personalize o nome e o logotipo exibidos no sistema</small>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <!-- Card: Nome e Ícone -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold"><i class="bi bi-building me-2"></i>Identidade</div>
+      <div class="card-body">
+        <div id="txtAlert" class="alert d-none mb-3" role="alert" style="font-size:.85rem;padding:.4rem .7rem;"></div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nome da empresa</label>
+          <input type="text" id="companyName" class="form-control" value="{{ cs.company_name }}" maxlength="64" placeholder="Ex: SorvPel">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Ícone Bootstrap <span class="text-muted small">(quando não há logotipo)</span></label>
+          <div class="input-group">
+            <span class="input-group-text" id="iconPreview"><i class="bi {{ cs.logo_icon }}" id="iconPreviewI"></i></span>
+            <input type="text" id="logoIcon" class="form-control" value="{{ cs.logo_icon }}" placeholder="bi-snow2"
+                   oninput="previewIcon(this.value)">
+          </div>
+          <div class="form-text">
+            Qualquer classe de ícone do
+            <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener">Bootstrap Icons</a>.
+            Ex: <code>bi-snow2</code>, <code>bi-shop</code>, <code>bi-cup-hot</code>, <code>bi-stars</code>
+          </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-primary btn-sm" onclick="saveText()">
+            <i class="bi bi-floppy me-1"></i>Salvar nome e ícone
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card: Logotipo -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold"><i class="bi bi-image me-2"></i>Logotipo (imagem)</div>
+      <div class="card-body">
+        <div id="logoAlert" class="alert d-none mb-3" role="alert" style="font-size:.85rem;padding:.4rem .7rem;"></div>
+
+        <!-- Preview atual -->
+        <div class="mb-3 p-3 rounded text-center" style="background:#1a1a2e;min-height:90px;display:flex;align-items:center;justify-content:center;">
+          {% if cs.logo_path %}
+            <img id="logoCurrentImg" src="{{ cs.logo_path }}" alt="Logo atual"
+                 style="max-height:64px;max-width:180px;border-radius:6px;">
+          {% else %}
+            <span id="logoCurrentImg" style="color:#e94560;font-size:1.5rem;font-weight:700;">
+              <i class="bi {{ cs.logo_icon }}"></i> {{ cs.company_name }}
+            </span>
+          {% endif %}
+        </div>
+
+        {% if cs.logo_path %}
+        <div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3" style="font-size:.83rem;">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Logotipo personalizado ativo: <code>{{ cs.logo_path }}</code></span>
+        </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Enviar novo logotipo</label>
+          <input type="file" id="logoFile" class="form-control form-control-sm" accept="image/*"
+                 onchange="previewUpload(this)">
+          <div class="form-text">PNG, JPG, WebP ou SVG · máx. 2 MB · recomendado: fundo transparente</div>
+        </div>
+
+        <!-- Preview do arquivo selecionado -->
+        <div id="uploadPreviewWrap" class="mb-3 d-none p-3 rounded text-center" style="background:#f0f2f5;border:1px dashed #adb5bd;">
+          <img id="uploadPreviewImg" src="" alt="Preview" style="max-height:64px;max-width:180px;border-radius:4px;">
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-success btn-sm" id="uploadBtn" onclick="uploadLogo()" disabled>
+            <i class="bi bi-cloud-upload me-1"></i>Enviar logotipo
+          </button>
+          {% if cs.logo_path %}
+          <button class="btn btn-outline-danger btn-sm" onclick="deleteLogo()">
+            <i class="bi bi-trash me-1"></i>Remover logotipo
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card: Preview ao vivo -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header fw-semibold"><i class="bi bi-eye me-2"></i>Pré-visualização da barra lateral</div>
+      <div class="card-body p-0">
+        <div style="background:#1a1a2e;padding:.6rem .6rem .6rem 1rem;display:flex;align-items:center;justify-content:space-between;border-radius:0 0 6px 6px;">
+          <span id="livePreview" style="color:#e94560;font-weight:700;font-size:1.05rem;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+            {% if cs.logo_path %}
+              <img id="liveLogoImg" src="{{ cs.logo_path }}" alt="" style="height:22px;border-radius:3px;">
+            {% else %}
+              <i class="bi {{ cs.logo_icon }}" id="liveIcon"></i>
+            {% endif %}
+            <span id="liveText">{{ cs.company_name }}</span>
+          </span>
+          <i class="bi bi-chevron-left" style="color:#adb5bd;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CURRENT_LOGO_PATH = {{ (cs.logo_path or '') | tojson }};
+
+function previewIcon(val) {
+  document.getElementById('iconPreviewI').className = 'bi ' + val.trim();
+  updateLivePreview();
+}
+
+function updateLivePreview() {
+  const name  = document.getElementById('companyName').value || 'Empresa';
+  const icon  = document.getElementById('logoIcon').value.trim() || 'bi-snow2';
+  const livePreview = document.getElementById('livePreview');
+  document.getElementById('liveText').textContent = name;
+  const liveIcon = document.getElementById('liveIcon');
+  if (liveIcon) liveIcon.className = 'bi ' + icon;
+}
+
+document.getElementById('companyName').addEventListener('input', updateLivePreview);
+document.getElementById('logoIcon').addEventListener('input', updateLivePreview);
+
+function previewUpload(input) {
+  const file = input.files[0];
+  const wrap = document.getElementById('uploadPreviewWrap');
+  const img  = document.getElementById('uploadPreviewImg');
+  const btn  = document.getElementById('uploadBtn');
+  if (!file) { wrap.classList.add('d-none'); btn.disabled = true; return; }
+  if (file.size > 2 * 1024 * 1024) {
+    showAlert('logoAlert', 'alert-warning', 'Arquivo muito grande. Máximo: 2 MB.');
+    input.value = ''; wrap.classList.add('d-none'); btn.disabled = true; return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    img.src = e.target.result;
+    wrap.classList.remove('d-none');
+    btn.disabled = false;
+    // Update live preview with the new image
+    const liveIcon = document.getElementById('liveIcon');
+    const liveImgEl = document.getElementById('liveLogoImg');
+    if (!liveImgEl) {
+      const span = document.getElementById('livePreview');
+      const iconEl = span.querySelector('i');
+      if (iconEl) iconEl.remove();
+      const newImg = document.createElement('img');
+      newImg.id = 'liveLogoImg';
+      newImg.alt = '';
+      newImg.style.cssText = 'height:22px;border-radius:3px;';
+      newImg.src = e.target.result;
+      span.insertBefore(newImg, span.firstChild);
+    } else {
+      liveImgEl.src = e.target.result;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function showAlert(id, cls, msg) {
+  const el = document.getElementById(id);
+  el.className = 'alert ' + cls + ' mb-3';
+  el.textContent = msg;
+  el.style.fontSize = '.85rem'; el.style.padding = '.4rem .7rem';
+}
+
+async function saveText() {
+  const name = document.getElementById('companyName').value.trim();
+  const icon = document.getElementById('logoIcon').value.trim();
+  if (!name) { showAlert('txtAlert', 'alert-warning', 'Informe o nome da empresa.'); return; }
+  const res = await fetch('/api/v1/settings', {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ company_name: name, logo_icon: icon }),
+  });
+  if (res.ok) {
+    showAlert('txtAlert', 'alert-success', 'Configurações salvas! A página será recarregada.');
+    setTimeout(() => location.reload(), 1200);
+  } else {
+    const d = await res.json().catch(() => ({}));
+    showAlert('txtAlert', 'alert-danger', d.detail || 'Erro ao salvar.');
+  }
+}
+
+async function uploadLogo() {
+  const file = document.getElementById('logoFile').files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/v1/settings/logo', { method: 'POST', body: fd });
+  if (res.ok) {
+    showAlert('logoAlert', 'alert-success', 'Logotipo enviado! A página será recarregada.');
+    setTimeout(() => location.reload(), 1200);
+  } else {
+    const d = await res.json().catch(() => ({}));
+    showAlert('logoAlert', 'alert-danger', d.detail || 'Erro ao enviar logotipo.');
+  }
+}
+
+async function deleteLogo() {
+  if (!confirm('Remover o logotipo personalizado?')) return;
+  const res = await fetch('/api/v1/settings/logo', { method: 'DELETE' });
+  if (res.ok) {
+    showAlert('logoAlert', 'alert-success', 'Logotipo removido. Recarregando...');
+    setTimeout(() => location.reload(), 1000);
+  } else {
+    showAlert('logoAlert', 'alert-danger', 'Erro ao remover logotipo.');
+  }
+}
+</script>
+{% endblock %}
