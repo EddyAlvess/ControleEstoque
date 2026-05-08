@@ -14,6 +14,7 @@ from app.models.user import WebUser
 from app.services.auth_service import hash_password
 
 DATABASE_URL = os.environ["DATABASE_URL"]
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
 engine = create_async_engine(DATABASE_URL)
 SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -40,10 +41,10 @@ async def seed():
             db.add(WebUser(
                 username="admin",
                 full_name="Administrador",
-                hashed_password=hash_password("admin123"),
+                hashed_password=hash_password(ADMIN_PASSWORD),
                 role="admin",
             ))
-            print("✓ Usuário admin criado (senha: admin123)")
+            print(f"✓ Usuário admin criado (senha: {ADMIN_PASSWORD})")
         else:
             print("  Admin já existe, pulando...")
 
