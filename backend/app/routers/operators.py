@@ -4,12 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import require_admin, require_user_or_esp32, verify_esp32_key
+from app.logging_config import get_logger
 from app.models.operator import Operator
 from app.models.user import WebUser
 from app.schemas.operator import OperatorCreate, OperatorRead, OperatorUpdate, PinVerifyRequest
 from app.services.auth_service import hash_password, verify_password
 
 router = APIRouter(prefix="/api/v1/operators", tags=["operators"])
+_log = get_logger("admin")
 
 
 @router.get("", response_model=list[OperatorRead])
@@ -40,6 +42,7 @@ async def create_operator(
     db.add(op)
     await db.commit()
     await db.refresh(op)
+    _log.info("operator_created", extra={"operator_id": op.id, "name": op.name, "admin_id": _.id})
     return op
 
 
@@ -65,6 +68,7 @@ async def update_operator(
     db.add(op)
     await db.commit()
     await db.refresh(op)
+    _log.info("operator_updated", extra={"operator_id": op.id, "admin_id": _.id})
     return op
 
 
@@ -81,6 +85,7 @@ async def deactivate_operator(
     op.is_active = False
     db.add(op)
     await db.commit()
+    _log.info("operator_deactivated", extra={"operator_id": op_id, "admin_id": _.id})
 
 
 @router.post("/{op_id}/verify-pin", status_code=status.HTTP_200_OK)

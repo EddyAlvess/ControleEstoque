@@ -7,9 +7,9 @@ from app.models.settings import CompanySettings
 class _SettingsCache:
     def __init__(self):
         self._data: dict = {
-            "company_name": "SorvPel",
+            "company_name": "InventControl",
             "logo_path": None,
-            "logo_icon": "bi-snow2",
+            "logo_icon": "bi-box-seam",
         }
 
     def get(self) -> dict:

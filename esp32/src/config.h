@@ -5,9 +5,15 @@
 #define WIFI_PASSWORD "SUA_SENHA_WIFI"
 
 // ─── Servidor ────────────────────────────────────────────────────────────────
-// Exemplo local: "http://192.168.1.100"  |  Cloud: "https://estoque.suaempresa.com"
+// Rede local (HTTP): "http://192.168.1.100"
+// Cloud (HTTPS):     "https://estoque.suaempresa.com"
 #define SERVER_URL    "http://192.168.1.100"
 #define API_KEY       "COLE_AQUI_A_ESP32_API_KEY_DO_ENV"
+
+// ─── HTTPS (cloud) ───────────────────────────────────────────────────────────
+// Descomente ao usar servidor cloud com certificado Let's Encrypt.
+// Requer SERVER_URL com https:// e CA cert ISRG Root X1 em api_client.cpp.
+// #define USE_HTTPS
 
 // ─── Identificação do terminal ───────────────────────────────────────────────
 #define DEVICE_ID     "ESP32-LINHA-A"

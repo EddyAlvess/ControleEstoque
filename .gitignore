@@ -57,3 +57,4 @@ backend/app/static/logos/*.svg
 
 # Installation manual (sensitive infra details — not for public repo)
 docs/SorvPel_Manual.html
+docs/InventControl_Manual.html

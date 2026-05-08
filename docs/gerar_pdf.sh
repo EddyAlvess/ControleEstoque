@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-#  SorvPel — Gera os manuais em PDF a partir dos HTMLs
+#  InventControl — Gera os manuais em PDF a partir dos HTMLs
 #  Usa Chromium ou Google Chrome em modo headless.
-#  Gera: SorvPel_Manual.pdf e SorvPel_Manual_Operacional.pdf
+#  Gera: InventControl_Manual.pdf e InventControl_Manual_Operacional.pdf
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 
@@ -38,8 +38,8 @@ info "Usando browser: ${BROWSER}"
 echo
 
 # Lista de arquivos a gerar
-declare -a HTMLS=("SorvPel_Manual.html" "SorvPel_Manual_Operacional.html")
-declare -a PDFS=("SorvPel_Manual.pdf"  "SorvPel_Manual_Operacional.pdf")
+declare -a HTMLS=("InventControl_Manual.html" "InventControl_Manual_Operacional.html")
+declare -a PDFS=("InventControl_Manual.pdf"  "InventControl_Manual_Operacional.pdf")
 
 OK=0; FAIL=0
 

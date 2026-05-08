@@ -1,6 +1,13 @@
 #pragma once
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <HTTPClient.h>
+#ifdef USE_HTTPS
+#include <WiFiClientSecure.h>
+// ISRG Root X1 — CA raiz do Let's Encrypt, necessária para validar HTTPS.
+// Fonte: https://letsencrypt.org/certs/isrgrootx1.pem
+extern const char ISRG_ROOT_X1[];
+#endif
 
 struct Operator {
     int    id;

@@ -75,19 +75,47 @@ pio run -t upload --upload-port 192.168.x.x   # OTA push
 
 ## Architecture
 
+### Production deployment (VPS cloud)
+
+Request flow: **Internet → Nginx (443 HTTPS) → FastAPI → PostgreSQL (internal)**
+
+- `nginx/nginx.conf.template`: Full HTTPS config. `${DOMAIN}` is substituted at container start via `envsubst` in `nginx/entrypoint.sh`.
+- Port 80 redirects to HTTPS. Port 443 terminates TLS (TLSv1.2/1.3).
+- Rate limits: login 5r/min, API writes 30r/min, API reads 120r/min (slowapi + nginx).
+- Security headers: HSTS, X-Frame-Options, X-Content-Type-Options.
+- Certbot container renews Let's Encrypt cert every 12h automatically.
+- PostgreSQL has **no exposed ports** — only reachable on internal Docker network.
+- Install with `bash scripts/install_vps.sh` on Ubuntu 24.04. See `docs/InventControl_Manual.html` (not committed — contains infra details).
+
 ### Backend (`backend/app/`)
 
 Request flow: **Nginx → FastAPI → SQLAlchemy async → PostgreSQL**
 
 Two authentication paths coexist:
-- **Web users** (browser): JWT stored in HttpOnly cookie `access_token`. Dependencies: `require_user()` → `require_admin()` in `dependencies.py`.
+- **Web users** (browser): JWT stored in HttpOnly cookie `access_token` (`secure=True` in production). Dependencies: `require_user()` → `require_admin()` in `dependencies.py`.
 - **ESP32 terminals**: static `X-API-Key` header validated by `verify_esp32_key()` in `dependencies.py`. The key is set via `ESP32_API_KEY` env var.
+
+Rate limiting on login: `@limiter.limit("5/minute")` in `routers/auth.py`. The `limiter` instance is defined in `app/limiter.py` (separate module to avoid circular imports — `main.py` and routers both import from it).
 
 Routes are split into two categories in `routers/`:
 - `web.py` — returns `TemplateResponse` (Jinja2 HTML pages, one function per page)
 - All others (`movements.py`, `operators.py`, `categories.py`, etc.) — return JSON for the REST API under `/api/v1/`
 
 `report_service.py` handles all complex multi-join queries. Adding new report filters: modify `get_movements_query()` there, not in the router.
+
+### Structured logging
+
+Five log categories, each in its own rotating JSON file (`LOG_DIR/{category}/{category}.log`, daily rotation, 30-day retention):
+
+| Logger | Events |
+|--------|--------|
+| `api` | Every HTTP request (method, path, status, latency, IP, UA) |
+| `auth` | `login_success`, `login_failure`, `password_change` |
+| `movements` | Every movement created by ESP32 |
+| `admin` | Operator/user/settings CRUD by admin users |
+| `errors` | 5xx server errors |
+
+Use `get_logger("category")` from `app/logging_config.py` in any router. `setup_logging(log_dir)` is called once in `lifespan()` in `main.py`. `LOG_DIR` comes from `.env` (default: `/app/logs`).
 
 ### Database schema key decisions
 - `inventory_movements` has two timestamps: `recorded_at` (from ESP32 device clock, NTP-synced) and `created_at` (server receipt). Always use `recorded_at` for business logic.
@@ -99,7 +127,7 @@ Routes are split into two categories in `routers/`:
 ### Company branding / theme
 `CompanySettings` (migration 005) is a singleton holding the company name and logo. At startup (`lifespan()` in `main.py`) the record is loaded into a module-level `_SettingsCache` object. Every Jinja2 template context receives it via the `cs` key injected in `_ctx()` in `routers/web.py`. On save (`PUT /api/v1/settings`), the cache is updated in-memory — no server restart needed.
 
-Logo images are stored in `backend/app/static/logos/` and served by FastAPI's `StaticFiles` mount at `/static`. In Docker deployments add a bind-mount for this directory to persist logos across container restarts.
+Logo images are stored in `backend/app/static/logos/` and served by FastAPI's `StaticFiles` mount at `/static`. In Docker deployments the `logo_files` named volume persists logos across container restarts.
 
 ### Template safety rule
 **Never pass user-entered strings directly into onclick attributes.** All admin templates (products, categories, shifts) embed their data as `const DATA = {{ items | tojson }};` in a script block and pass only integer IDs to onclick handlers (e.g. `onclick="openEdit({{ item.id }})"`). This avoids HTML attribute breakage when names contain quotes or special characters.
@@ -115,13 +143,15 @@ The firmware is a finite state machine in `menu.cpp`. All state transitions are 
 
 Key flow: `main.cpp:setup()` connects WiFi → OTA check → loads operators/products from API → `menu.begin()`. The `loop()` calls `ArduinoOTA.handle()` first, then reads keypad or scanner and delegates to `menu.handleKey()` / `menu.handleScanner()`.
 
+**HTTPS (cloud):** Define `USE_HTTPS` in `config_local.h` and set `SERVER_URL` to `https://...`. `api_client.cpp` uses `WiFiClientSecure` with the ISRG Root X1 CA (Let's Encrypt) embedded as a string constant. For local HTTP, leave `USE_HTTPS` commented out.
+
 Scanner support is compile-time gated: uncomment `#define SCANNER_ENABLED` in `config.h`. When enabled, `scanner.available()` is checked before `keypad.read()` in `loop()`.
 
 The simulator (`esp32-sim/simulator.py`) mirrors the ESP32 state machine in Python using `curses`. It uses a 20×4 LCD display simulation and fetches operators, products and shifts dynamically from the API.
 
 ### Configuration
 
-All secrets are in `.env` (git-ignored). The template is `.env.example`. The ESP32 config is hardcoded in `esp32/src/config.h` (also git-ignored via `config_local.h` pattern — keep credentials out of `config.h` if committing).
+All secrets are in `.env` (git-ignored). The template is `.env.example`. The ESP32 config is hardcoded in `esp32/src/config.h`; create `esp32/src/config_local.h` (git-ignored) for actual credentials.
 
 The `docker-compose.override.yml` activates automatically in dev: mounts the full `backend/` directory for hot reload and shifts Nginx to port 8080.
 
@@ -137,14 +167,22 @@ The `docker-compose.override.yml` activates automatically in dev: mounts the ful
 | Company settings model | `backend/app/models/settings.py` |
 | Company settings API | `backend/app/routers/settings.py` |
 | Dependency injection (auth guards) | `backend/app/dependencies.py` |
+| Logging setup | `backend/app/logging_config.py` |
+| Rate limiter instance | `backend/app/limiter.py` |
 | HTML templates | `backend/app/templates/` |
 | Admin theme template | `backend/app/templates/admin/settings.html` |
 | Static files (logos) | `backend/app/static/logos/` |
 | Alembic migrations | `backend/alembic/versions/` |
+| nginx HTTPS template | `nginx/nginx.conf.template` |
+| nginx entrypoint (envsubst) | `nginx/entrypoint.sh` |
+| VPS install script | `scripts/install_vps.sh` |
+| SSL renewal helper | `scripts/renew_certs.sh` |
 | ESP32 state machine | `esp32/src/menu.cpp` |
-| ESP32 HTTP client | `esp32/src/api_client.cpp` |
-| ESP32 credentials/pins | `esp32/src/config.h` |
+| ESP32 HTTP/HTTPS client | `esp32/src/api_client.cpp` |
+| ESP32 credentials/pins | `esp32/src/config.h` (template) / `config_local.h` (git-ignored) |
 | ESP32 Python simulator | `esp32-sim/simulator.py` |
+| ESP32 deployment manual | `docs/ESP32_Implantacao.html` (committed, generic) |
+| VPS installation manual | `docs/InventControl_Manual.html` (NOT committed — infra details) |
 
 ## Web Portal Pages
 

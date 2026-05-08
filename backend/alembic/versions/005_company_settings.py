@@ -22,7 +22,7 @@ def upgrade():
         sa.Column("logo_icon", sa.String(64), nullable=False, server_default="bi-snow2"),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
-    op.execute("INSERT INTO company_settings (company_name, logo_icon) VALUES ('SorvPel', 'bi-snow2')")
+    op.execute("INSERT INTO company_settings (company_name, logo_icon) VALUES ('InventControl', 'bi-box-seam')")
 
 
 def downgrade():

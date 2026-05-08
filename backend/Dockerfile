@@ -15,6 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código
 COPY . .
 
+# Criar diretórios de log antes de trocar para appuser (volume montado herda permissões)
+RUN mkdir -p /app/logs/api /app/logs/auth /app/logs/movements /app/logs/admin /app/logs/errors
+
 # Usuário não-root
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser

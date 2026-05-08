@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InventControl — Manual de Implantação do ESP32</title>
+<style>
+  :root {
+    --blue: #0d6efd; --blue-dark: #0a58ca;
+    --green: #198754; --red: #dc3545;
+    --yellow: #ffc107; --gray: #6c757d;
+    --bg: #f8f9fa; --white: #ffffff;
+    --border: #dee2e6; --text: #212529;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .cover { background: linear-gradient(135deg, var(--blue) 0%, #0a3d91 100%); color: #fff; padding: 60px 40px; text-align: center; }
+  .cover h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+  .cover .subtitle { font-size: 1.1rem; opacity: .85; }
+  .cover .badge { display: inline-block; background: rgba(255,255,255,.2); border-radius: 20px; padding: 4px 16px; margin-top: 16px; font-size: .9rem; }
+  nav.toc { background: var(--white); border-bottom: 1px solid var(--border); padding: 16px 40px; }
+  nav.toc ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  nav.toc a { color: var(--blue); text-decoration: none; font-size: .9rem; }
+  nav.toc a:hover { text-decoration: underline; }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+  h2 { font-size: 1.5rem; font-weight: 700; color: var(--blue-dark); border-left: 4px solid var(--blue); padding-left: 12px; margin: 40px 0 16px; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 24px 0 10px; color: #333; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 12px 0 12px 24px; }
+  li { margin-bottom: 6px; }
+  code { font-family: 'Courier New', monospace; background: #e9ecef; border-radius: 4px; padding: 1px 5px; font-size: .9em; }
+  pre { background: #1e2736; color: #d4e0f0; border-radius: 8px; padding: 20px; overflow-x: auto; margin: 12px 0 20px; font-size: .88rem; line-height: 1.5; }
+  pre .comment { color: #6c9; font-style: italic; }
+  pre .key { color: #79c; }
+  pre .val { color: #fc8; }
+  .callout { border-radius: 8px; padding: 14px 18px; margin: 16px 0; }
+  .callout-info  { background: #cff4fc; border-left: 4px solid #0dcaf0; }
+  .callout-warn  { background: #fff3cd; border-left: 4px solid var(--yellow); }
+  .callout-ok    { background: #d1e7dd; border-left: 4px solid var(--green); }
+  .callout-danger{ background: #f8d7da; border-left: 4px solid var(--red); }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: .9rem; }
+  th { background: var(--blue); color: #fff; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #f1f3f5; }
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step-num { background: var(--blue); color: #fff; border-radius: 50%; width: 32px; height: 32px; min-width: 32px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; margin-top: 2px; }
+  .step-body { flex: 1; }
+  .step-body p:last-child { margin-bottom: 0; }
+  .lcd { font-family: 'Courier New', monospace; background: #1a3a1a; color: #39ff14; border: 2px solid #333; border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-size: 1rem; white-space: pre; line-height: 1.8; }
+  footer { background: #1e2736; color: #aaa; text-align: center; padding: 24px; font-size: .85rem; margin-top: 60px; }
+  @media print { nav.toc { display:none; } }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>InventControl</h1>
+  <p class="subtitle">Manual de Implantação do Terminal ESP32</p>
+  <span class="badge">Versão 1.0 — 2025</span>
+</div>
+
+<nav class="toc">
+  <ul>
+    <li><a href="#prereq">1. Pré-requisitos</a></li>
+    <li><a href="#config">2. Configuração do firmware</a></li>
+    <li><a href="#compile">3. Compilar e gravar</a></li>
+    <li><a href="#verify">4. Verificação</a></li>
+    <li><a href="#ota">5. Atualização OTA</a></li>
+    <li><a href="#troubleshoot">6. Troubleshooting</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+
+<!-- ─── 1. Pré-requisitos ─────────────────────────────────────────────────── -->
+<h2 id="prereq">1. Pré-requisitos</h2>
+
+<h3>Hardware</h3>
+<table>
+  <tr><th>Item</th><th>Especificação</th></tr>
+  <tr><td>Microcontrolador</td><td>ESP32 (qualquer variante com Wi-Fi — WROOM, WROVER, S3)</td></tr>
+  <tr><td>Display</td><td>LCD 16×2 I2C (endereço padrão 0x27)</td></tr>
+  <tr><td>Teclado</td><td>Matricial 4×4 (conexão direta aos GPIOs)</td></tr>
+  <tr><td>Cabo USB</td><td>USB-A para USB micro/Type-C (conforme modelo ESP32)</td></tr>
+  <tr><td>Rede</td><td>Wi-Fi 2.4 GHz com acesso à internet (para modo cloud)</td></tr>
+</table>
+
+<h3>Software</h3>
+<ul>
+  <li><strong>VS Code</strong> com extensão <strong>PlatformIO IDE</strong> instalada</li>
+  <li>Driver USB do ESP32 — <em>CP210x</em> ou <em>CH340</em> conforme placa</li>
+  <li>Git (para clonar o repositório)</li>
+</ul>
+
+<div class="callout callout-info">
+  <strong>Alternativa:</strong> É possível usar o <code>pio</code> via linha de comando (<code>pip install platformio</code>) em vez de VS Code + extensão.
+</div>
+
+<!-- ─── 2. Configuração ───────────────────────────────────────────────────── -->
+<h2 id="config">2. Configuração do firmware</h2>
+
+<h3>2.1 Clonar o repositório</h3>
+<pre>git clone https://github.com/SEU_USUARIO/ControleEstoque.git
+cd ControleEstoque/esp32</pre>
+
+<h3>2.2 Criar o arquivo de configuração local</h3>
+<p>O arquivo <code>esp32/src/config.h</code> contém valores padrão com placeholders. Crie uma <strong>cópia local</strong> que o Git ignora automaticamente:</p>
+<pre>cp src/config.h src/config_local.h</pre>
+<div class="callout callout-warn">
+  <strong>Atenção:</strong> Edite <strong>apenas</strong> o <code>config_local.h</code>. Nunca salve credenciais no <code>config.h</code> que está versionado.
+</div>
+
+<h3>2.3 Editar config_local.h</h3>
+<p>Abra <code>src/config_local.h</code> e preencha os campos abaixo:</p>
+
+<pre><span class="comment">// ─── Wi-Fi ──────────────────────────────────────────────────────────────────</span>
+<span class="key">#define</span> <span class="val">WIFI_SSID</span>     <span class="val">"NomeDaSuaRede"</span>
+<span class="key">#define</span> <span class="val">WIFI_PASSWORD</span> <span class="val">"SenhaDaRede"</span>
+
+<span class="comment">// ─── Servidor ───────────────────────────────────────────────────────────────</span>
+<span class="comment">// Rede local (HTTP):  "http://192.168.1.100"</span>
+<span class="comment">// Servidor cloud:     "https://estoque.suaempresa.com"</span>
+<span class="key">#define</span> <span class="val">SERVER_URL</span>    <span class="val">"https://estoque.suaempresa.com"</span>
+
+<span class="comment">// Copie do arquivo .env do servidor (campo ESP32_API_KEY)</span>
+<span class="key">#define</span> <span class="val">API_KEY</span>       <span class="val">"cole_aqui_a_chave_do_env"</span>
+
+<span class="comment">// ─── HTTPS (obrigatório para servidor cloud) ─────────────────────────────────</span>
+<span class="key">#define</span> <span class="val">USE_HTTPS</span>
+
+<span class="comment">// ─── Identificação do terminal ────────────────────────────────────────────────</span>
+<span class="comment">// Use IDs únicos quando tiver múltiplos terminais</span>
+<span class="key">#define</span> <span class="val">DEVICE_ID</span>     <span class="val">"ESP32-TERMINAL-01"</span></pre>
+
+<h3>2.4 Onde encontrar a API Key</h3>
+<ol>
+  <li>Acesse o servidor VPS via SSH</li>
+  <li>Execute: <code>grep ESP32_API_KEY /opt/inventcontrol/.env</code></li>
+  <li>Copie o valor após o <code>=</code> para o campo <code>API_KEY</code> no firmware</li>
+</ol>
+
+<h3>2.5 HTTPS e certificado Let's Encrypt</h3>
+<p>Quando <code>USE_HTTPS</code> está definido, o firmware valida o certificado do servidor usando o CA raiz <strong>ISRG Root X1</strong> (Let's Encrypt), que já vem embutido no código em <code>api_client.cpp</code>.</p>
+
+<div class="callout callout-info">
+  O certificado ISRG Root X1 é válido até <strong>2035</strong>. Se Let's Encrypt mudar o CA raiz antes disso, atualize o firmware via OTA.
+</div>
+
+<p>Para rede local sem HTTPS, comente a linha <code>#define USE_HTTPS</code> e use <code>SERVER_URL</code> com <code>http://</code>.</p>
+
+<!-- ─── 3. Compilar e gravar ──────────────────────────────────────────────── -->
+<h2 id="compile">3. Compilar e gravar</h2>
+
+<h3>3.1 Via VS Code + PlatformIO</h3>
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body"><p>Abra a pasta <code>esp32/</code> no VS Code (<em>File → Open Folder</em>). O PlatformIO detecta o <code>platformio.ini</code> automaticamente.</p></div>
+</div>
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body"><p>Conecte o ESP32 via USB. Verifique a porta COM/ttyUSB na barra de status inferior do VS Code.</p></div>
+</div>
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body"><p>Clique em <strong>→ Upload</strong> (ícone de seta na barra inferior) ou use <kbd>Ctrl+Alt+U</kbd>. O PlatformIO compila e grava automaticamente.</p></div>
+</div>
+
+<h3>3.2 Via linha de comando</h3>
+<pre>cd esp32
+pio run -t upload              <span class="comment"># compila + grava via USB</span>
+pio device monitor --baud 115200  <span class="comment"># monitor serial</span></pre>
+
+<h3>3.3 Porta USB não encontrada</h3>
+<ul>
+  <li><strong>Windows:</strong> Instale o driver CP210x ou CH340 e verifique o Gerenciador de Dispositivos (COMx)</li>
+  <li><strong>Linux:</strong> Adicione seu usuário ao grupo <code>dialout</code>: <code>sudo usermod -aG dialout $USER</code></li>
+  <li><strong>macOS:</strong> Instale o driver via Homebrew: <code>brew install --cask silicon-labs-vcp-driver</code></li>
+</ul>
+
+<!-- ─── 4. Verificação ────────────────────────────────────────────────────── -->
+<h2 id="verify">4. Verificação após a gravação</h2>
+
+<h3>4.1 Monitor serial</h3>
+<p>Após gravar, abra o monitor serial a 115200 baud. Você deve ver:</p>
+<pre>Conectando WiFi...
+WiFi OK — IP: 192.168.1.xxx
+NTP sincronizado
+Verificando OTA... sem atualização
+Carregando operadores: 3
+Carregando produtos: 12
+Sistema pronto.</pre>
+
+<h3>4.2 Display LCD</h3>
+<p>O LCD deve exibir a tela inicial após o boot:</p>
+<div class="lcd">InventControl
+Selecione op.</div>
+
+<h3>4.3 Teste de movimento</h3>
+<ol>
+  <li>No LCD, selecione um operador, produto e quantidade</li>
+  <li>Confirme o movimento</li>
+  <li>No painel web (<code>https://seudominio/reports</code>), o movimento deve aparecer em até 5 segundos</li>
+</ol>
+
+<h3>4.4 Verificar HTTPS no monitor serial</h3>
+<p>Com <code>USE_HTTPS</code> ativo, você verá:</p>
+<pre>POST /api/v1/movements → 201 (HTTPS OK)</pre>
+<p>Se aparecer <code>HTTPS FAIL</code> ou <code>-1</code>, veja a seção <a href="#troubleshoot">Troubleshooting</a>.</p>
+
+<!-- ─── 5. OTA ────────────────────────────────────────────────────────────── -->
+<h2 id="ota">5. Atualização OTA (Over-the-Air)</h2>
+
+<h3>Como funciona</h3>
+<p>No boot, o ESP32 consulta <code>/api/v1/ota/version</code>. Se a versão do servidor for maior que <code>FIRMWARE_VER</code> definida no firmware, ele baixa e grava automaticamente o novo firmware.</p>
+
+<h3>Publicar nova versão</h3>
+<ol>
+  <li>Incremente <code>FIRMWARE_VER</code> em <code>config_local.h</code> (ex: <code>"1.0.1"</code>)</li>
+  <li>Compile: <code>pio run</code></li>
+  <li>Faça upload do <code>.pio/build/esp32dev/firmware.bin</code> pelo painel web:<br>
+      <em>Admin → OTA → Enviar firmware</em></li>
+  <li>No próximo boot (ou reinício manual do ESP32), o update acontece automaticamente</li>
+</ol>
+
+<h3>OTA forçado via PlatformIO</h3>
+<p>Para gravar diretamente via rede (sem USB):</p>
+<pre>pio run -t upload --upload-port 192.168.1.XXX</pre>
+<p>O ESP32 deve estar na mesma rede. O IP aparece no monitor serial na linha <code>WiFi OK — IP: ...</code>.</p>
+
+<!-- ─── 6. Troubleshooting ────────────────────────────────────────────────── -->
+<h2 id="troubleshoot">6. Troubleshooting</h2>
+
+<table>
+  <tr><th>Sintoma</th><th>Causa provável</th><th>Solução</th></tr>
+  <tr>
+    <td>LCD não acende</td>
+    <td>Endereço I2C errado ou contraste</td>
+    <td>Ajuste o trimpot no módulo I2C. Teste com endereço <code>0x3F</code> se 0x27 não funcionar.</td>
+  </tr>
+  <tr>
+    <td>WiFi não conecta</td>
+    <td>SSID/senha errado, ou rede 5 GHz</td>
+    <td>ESP32 suporta apenas 2.4 GHz. Verifique credenciais e aproxime da rota.</td>
+  </tr>
+  <tr>
+    <td>NTP não sincroniza</td>
+    <td>Firewall bloqueando UDP 123</td>
+    <td>Libere a porta 123/UDP no roteador ou firewall corporativo.</td>
+  </tr>
+  <tr>
+    <td>HTTPS FAIL / erro -1</td>
+    <td>CA cert inválido ou expirado</td>
+    <td>Verifique se o certificado do servidor está válido: <code>curl -I https://seudominio/health</code>. Atualize o CA cert em <code>api_client.cpp</code> se necessário.</td>
+  </tr>
+  <tr>
+    <td>API retorna 401</td>
+    <td>API Key incorreta</td>
+    <td>Confira <code>API_KEY</code> no firmware vs <code>ESP32_API_KEY</code> no <code>.env</code> do servidor.</td>
+  </tr>
+  <tr>
+    <td>API retorna 429</td>
+    <td>Rate limit do nginx atingido</td>
+    <td>Aguarde 1 minuto. Se persistir, o terminal está enviando requisições em loop — verifique o código.</td>
+  </tr>
+  <tr>
+    <td>Operadores não carregam</td>
+    <td>Servidor indisponível ou URL errada</td>
+    <td>Verifique <code>SERVER_URL</code> e se o servidor está acessível pelo IP/rede do ESP32.</td>
+  </tr>
+  <tr>
+    <td>OTA falha</td>
+    <td>Firmware maior que 50% da flash</td>
+    <td>O ESP32 precisa de partições OTA ativas no <code>platformio.ini</code> (<code>board_build.partitions = min_spiffs.csv</code>).</td>
+  </tr>
+</table>
+
+<h3>Comando de diagnóstico rápido</h3>
+<p>No servidor VPS, verifique se o ESP32 está chegando:</p>
+<pre>tail -f /opt/inventcontrol/logs/movements/movements.log | python3 -m json.tool</pre>
+
+</div>
+
+<footer>
+  InventControl &mdash; Manual de Implantação ESP32 &mdash; 2025<br>
+  Documento técnico interno. Não contém dados sensíveis.
+</footer>
+</body>
+</html>

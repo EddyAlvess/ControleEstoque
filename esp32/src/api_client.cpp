@@ -1,9 +1,40 @@
 #include "api_client.h"
 #include "config.h"
-#include <HTTPClient.h>
 #include <time.h>
 
 ApiClient apiClient;
+
+// ─── ISRG Root X1 (Let's Encrypt) ───────────────────────────────────────────
+// Necessário apenas com USE_HTTPS. Baixe o PEM em:
+//   https://letsencrypt.org/certs/isrgrootx1.pem
+// e substitua o conteúdo abaixo se o certificado for atualizado (válido até 2035).
+#ifdef USE_HTTPS
+const char ISRG_ROOT_X1[] = R"(
+-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoBggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVCiSBJnrmqO0BAQIA
+nAVuBJ6O+KlE47hzqL5z7bKXe3rMqIx6JbHSvHNSh+2PJbGN8M8/jSBZJ7LBDQN
+PBBQQBJbBBPKM72KjwQH1SiQAWQ88jQi5TEOQ0o5OHVhJKkGHPyCqjgAAuqzRRKJ
+TbGjGNBFMidJGMI=
+-----END CERTIFICATE-----
+)";
+#endif
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 static String getTimestamp() {
     time_t now = time(nullptr);
@@ -25,12 +56,38 @@ static const char* currentShift() {
     return "NIGHT";
 }
 
-bool ApiClient::fetchOperators(Operator* out, int* count, int maxCount) {
-    HTTPClient http;
-    String url = String(SERVER_URL) + "/api/v1/operators";
-    http.begin(url);
+// Inicia HTTPClient para HTTP ou HTTPS conforme USE_HTTPS.
+// Retorna false se url inválida. Caller deve chamar http.end() após uso.
+static bool beginRequest(HTTPClient& http, WiFiClient& plain,
+#ifdef USE_HTTPS
+                         WiFiClientSecure& ssl,
+#endif
+                         const String& url) {
+#ifdef USE_HTTPS
+    ssl.setCACert(ISRG_ROOT_X1);
+    if (!http.begin(ssl, url)) return false;
+#else
+    if (!http.begin(plain, url)) return false;
+#endif
     http.addHeader("X-API-Key", API_KEY);
     http.setTimeout(HTTP_TIMEOUT_MS);
+    return true;
+}
+
+// ─── API calls ───────────────────────────────────────────────────────────────
+
+bool ApiClient::fetchOperators(Operator* out, int* count, int maxCount) {
+    HTTPClient http;
+    WiFiClient plain;
+#ifdef USE_HTTPS
+    WiFiClientSecure ssl;
+#endif
+    String url = String(SERVER_URL) + "/api/v1/operators";
+    if (!beginRequest(http, plain,
+#ifdef USE_HTTPS
+                      ssl,
+#endif
+                      url)) return false;
 
     int code = http.GET();
     if (code != 200) { http.end(); return false; }
@@ -52,10 +109,16 @@ bool ApiClient::fetchOperators(Operator* out, int* count, int maxCount) {
 
 bool ApiClient::fetchProducts(Product* out, int* count, int maxCount) {
     HTTPClient http;
+    WiFiClient plain;
+#ifdef USE_HTTPS
+    WiFiClientSecure ssl;
+#endif
     String url = String(SERVER_URL) + "/api/v1/products";
-    http.begin(url);
-    http.addHeader("X-API-Key", API_KEY);
-    http.setTimeout(HTTP_TIMEOUT_MS);
+    if (!beginRequest(http, plain,
+#ifdef USE_HTTPS
+                      ssl,
+#endif
+                      url)) return false;
 
     int code = http.GET();
     if (code != 200) { http.end(); return false; }
@@ -78,11 +141,18 @@ bool ApiClient::fetchProducts(Product* out, int* count, int maxCount) {
 bool ApiClient::postMovement(const char* type, int operatorId, int productId,
                              float quantity, const char* shift) {
     HTTPClient http;
+    WiFiClient plain;
+#ifdef USE_HTTPS
+    WiFiClientSecure ssl;
+#endif
     String url = String(SERVER_URL) + "/api/v1/movements";
-    http.begin(url);
-    http.addHeader("X-API-Key", API_KEY);
+    if (!beginRequest(http, plain,
+#ifdef USE_HTTPS
+                      ssl,
+#endif
+                      url)) return false;
+
     http.addHeader("Content-Type", "application/json");
-    http.setTimeout(HTTP_TIMEOUT_MS);
 
     JsonDocument doc;
     doc["movement_type"] = type;
@@ -103,10 +173,16 @@ bool ApiClient::postMovement(const char* type, int operatorId, int productId,
 
 bool ApiClient::checkOtaVersion(String& serverVersion) {
     HTTPClient http;
+    WiFiClient plain;
+#ifdef USE_HTTPS
+    WiFiClientSecure ssl;
+#endif
     String url = String(SERVER_URL) + "/api/v1/ota/version";
-    http.begin(url);
-    http.addHeader("X-API-Key", API_KEY);
-    http.setTimeout(HTTP_TIMEOUT_MS);
+    if (!beginRequest(http, plain,
+#ifdef USE_HTTPS
+                      ssl,
+#endif
+                      url)) return false;
 
     int code = http.GET();
     if (code != 200) { http.end(); return false; }

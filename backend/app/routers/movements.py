@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import require_user, verify_esp32_key
+from app.logging_config import get_logger
 from app.models.movement import InventoryMovement
 from app.models.shift import Shift
 from app.models.user import WebUser
@@ -14,6 +15,7 @@ from app.schemas.movement import MovementCreate, MovementRead
 from app.services import report_service
 
 router = APIRouter(prefix="/api/v1/movements", tags=["movements"])
+_log = get_logger("movements")
 
 
 _SP = ZoneInfo("America/Sao_Paulo")
@@ -50,6 +52,15 @@ async def create_movement(
     db.add(mv)
     await db.commit()
     await db.refresh(mv)
+    _log.info("movement_created", extra={
+        "movement_id": mv.id,
+        "type": data.movement_type,
+        "operator_id": data.operator_id,
+        "product_id": data.product_id,
+        "quantity": data.quantity,
+        "shift": shift,
+        "device_id": data.device_id,
+    })
     return {"id": mv.id, "shift": shift, "message": "Movimento registrado"}
 
 

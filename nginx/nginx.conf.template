@@ -1,0 +1,123 @@
+# ── Rate limiting zones ──────────────────────────────────────────────────────
+limit_req_zone $binary_remote_addr zone=login:10m    rate=5r/m;
+limit_req_zone $binary_remote_addr zone=api_write:10m rate=30r/m;
+limit_req_zone $binary_remote_addr zone=api_read:10m  rate=120r/m;
+
+upstream backend {
+    server backend:8000;
+}
+
+# ── HTTP → HTTPS redirect (+ webroot certbot) ────────────────────────────────
+server {
+    listen 80;
+    server_name _;
+
+    # Certbot webroot challenge — NÃO redirecionar
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
+    # Todo o resto → HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ── HTTPS ────────────────────────────────────────────────────────────────────
+server {
+    listen 443 ssl;
+    http2  on;
+    server_name ${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    # Protocolos e cifras modernas
+    ssl_protocols             TLSv1.2 TLSv1.3;
+    ssl_ciphers               ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache         shared:SSL:10m;
+    ssl_session_timeout       1d;
+    ssl_session_tickets       off;
+
+    # OCSP Stapling
+    ssl_stapling        on;
+    ssl_stapling_verify on;
+    resolver            8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout    5s;
+
+    client_max_body_size 16M;
+    proxy_read_timeout   120s;
+    proxy_connect_timeout 10s;
+    proxy_send_timeout   120s;
+
+    # ── Security headers ────────────────────────────────────────────────────
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Frame-Options            "SAMEORIGIN"                                  always;
+    add_header X-Content-Type-Options     "nosniff"                                     always;
+    add_header X-XSS-Protection           "1; mode=block"                               always;
+    add_header Referrer-Policy            "strict-origin-when-cross-origin"             always;
+    add_header Permissions-Policy         "geolocation=(), microphone=(), camera=()"    always;
+
+    # ── Arquivos estáticos com cache ────────────────────────────────────────
+    location /static/ {
+        proxy_pass http://backend/static/;
+        proxy_set_header Host $host;
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    }
+
+    # ── Login — rate limit agressivo ───────────────────────────────────────
+    location = /login {
+        limit_req zone=login burst=5 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://backend;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ── Escritas API (movements, logo upload) — rate limit moderado ────────
+    location ~ ^/api/v1/(movements|settings/logo) {
+        limit_req zone=api_write burst=10 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://backend;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ── Leituras API ────────────────────────────────────────────────────────
+    location /api/ {
+        limit_req zone=api_read burst=30 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://backend;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ── Health check (sem log, sem rate limit) ──────────────────────────────
+    location = /health {
+        access_log off;
+        proxy_pass http://backend/health;
+        proxy_set_header Host $host;
+    }
+
+    # ── Tudo mais ────────────────────────────────────────────────────────────
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

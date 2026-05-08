@@ -1,10 +1,10 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    SorvPel — Gera os manuais em PDF a partir do HTML.
+    InventControl — Gera os manuais em PDF a partir do HTML.
 .DESCRIPTION
     Usa Microsoft Edge (headless) para converter os manuais HTML em PDF.
-    Gera: SorvPel_Manual.pdf e SorvPel_Manual_Operacional.pdf
+    Gera: InventControl_Manual.pdf e InventControl_Manual_Operacional.pdf
     Execute a partir da raiz do projeto ou da pasta docs/.
 #>
 
@@ -13,8 +13,8 @@ $ErrorActionPreference = "Stop"
 $DOCS_DIR = $PSScriptRoot
 
 $FILES = @(
-    @{ Html = "SorvPel_Manual.html";            Pdf = "SorvPel_Manual.pdf" },
-    @{ Html = "SorvPel_Manual_Operacional.html"; Pdf = "SorvPel_Manual_Operacional.pdf" }
+    @{ Html = "InventControl_Manual.html";            Pdf = "InventControl_Manual.pdf" },
+    @{ Html = "InventControl_Manual_Operacional.html"; Pdf = "InventControl_Manual_Operacional.pdf" }
 )
 
 function Write-Info($msg)  { Write-Host "► $msg" -ForegroundColor Cyan }

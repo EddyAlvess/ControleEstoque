@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-controle_estoque}
-      POSTGRES_USER: ${POSTGRES_USER:-sorv_user}
+      POSTGRES_USER: ${POSTGRES_USER:-inv_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       TZ: America/Sao_Paulo
       PGTZ: America/Sao_Paulo
@@ -13,12 +13,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sorv_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inv_user}"]
       interval: 5s
       timeout: 5s
       retries: 10
     networks:
       - backend_net
+    # Sem ports expostos — banco acessível apenas internamente
 
   backend:
     build:
@@ -26,33 +27,56 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-sorv_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-controle_estoque}?ssl=disable
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-inv_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-controle_estoque}?ssl=disable
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
       ESP32_API_KEY: ${ESP32_API_KEY}
       ENVIRONMENT: ${ENVIRONMENT:-production}
+      SECURE_COOKIES: ${SECURE_COOKIES:-true}
+      LOG_DIR: /app/logs
       TZ: America/Sao_Paulo
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - backend_net
-      - frontend_net
     volumes:
       - firmware_uploads:/app/uploads
+      - app_logs:/app/logs
+      - logo_files:/app/app/static/logos
+    # Sem ports expostos — backend acessível apenas via nginx
 
   nginx:
     build:
       context: ./nginx
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "${NGINX_PORT:-80}:80"
+    # Portas definidas nos overrides: dev (8080) ou prod (80+443)
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
     depends_on:
       - backend
     networks:
+      - backend_net
       - frontend_net
+    volumes:
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot:ro
+
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    # Daemon de renovação: tenta renovar a cada 12h
+    entrypoint: >
+      /bin/sh -c "trap exit TERM;
+      while :; do
+        certbot renew --webroot -w /var/www/certbot --quiet 2>&1;
+        sleep 12h & wait $${!};
+      done"
 
   esp32-sim:
     build:
@@ -75,8 +99,12 @@ services:
 volumes:
   postgres_data:
   firmware_uploads:
+  app_logs:
+  logo_files:
+  certbot_certs:
+  certbot_webroot:
 
 networks:
   backend_net:
-    internal: true
+    internal: true   # postgres e backend NUNCA acessíveis externamente
   frontend_net:

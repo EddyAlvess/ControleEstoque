@@ -1,0 +1,7 @@
+# Sobrescrita de produção — use junto do docker-compose.yml no VPS:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"
