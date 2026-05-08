@@ -176,6 +176,7 @@ The `docker-compose.override.yml` activates automatically in dev: mounts the ful
 | nginx HTTPS template | `nginx/nginx.conf.template` |
 | nginx entrypoint (envsubst) | `nginx/entrypoint.sh` |
 | VPS install script | `scripts/install_vps.sh` |
+| HTTP→HTTPS migration | `scripts/setup_https.sh` |
 | SSL renewal helper | `scripts/renew_certs.sh` |
 | ESP32 state machine | `esp32/src/menu.cpp` |
 | ESP32 HTTP/HTTPS client | `esp32/src/api_client.cpp` |
