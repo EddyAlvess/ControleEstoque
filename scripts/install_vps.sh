@@ -93,7 +93,24 @@ else
     error "Não encontrei arquivos. Execute a partir do repositório ou defina REPO_URL."
 fi
 
-# ─── 5. Gerar .env ───────────────────────────────────────────────────────────
+# ─── 5. Verificar reinstalação ───────────────────────────────────────────────
+# Se o volume do postgres já existir, a senha do .env anterior não bate com
+# o novo .env gerado a seguir — isso causa InvalidPasswordError no backend.
+COMPOSE_PROJECT="${COMPOSE_PROJECT_NAME:-$(basename "$INSTALL_DIR")}"
+if docker volume inspect "${COMPOSE_PROJECT}_postgres_data" &>/dev/null; then
+    warn "Volume de dados do PostgreSQL já existe (instalação anterior detectada)."
+    warn "Continuar vai apagar todos os dados existentes e reiniciar do zero."
+    read -rp "Apagar volume e continuar instalação limpa? (s/N): " _WIPE
+    if [[ "${_WIPE,,}" == "s" ]]; then
+        docker compose -f "$INSTALL_DIR/docker-compose.yml" down 2>/dev/null || true
+        docker volume rm "${COMPOSE_PROJECT}_postgres_data" 2>/dev/null || true
+        info "Volume removido — instalação limpa."
+    else
+        error "Instalação cancelada. Para atualizar sem perder dados use 'alembic upgrade head' manualmente."
+    fi
+fi
+
+# ─── 5b. Gerar .env ──────────────────────────────────────────────────────────
 info "Gerando arquivo .env com segredos aleatórios..."
 DB_PASSWORD="$(openssl rand -hex 24)"
 SECRET_KEY="$(openssl rand -hex 32)"
